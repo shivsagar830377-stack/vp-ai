@@ -19,8 +19,8 @@ export async function POST(request) {
 
     const groq = new Groq({ apiKey });
 
-    // Groq का एक्टिव मॉडल
-    const modelToUse = "openai/gpt-oss-20b";
+    // Groq का सक्रिय मॉडल
+    const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
 
     let userContent = [];
     if (image) {
@@ -39,7 +39,7 @@ export async function POST(request) {
       messages: [
         {
           role: "system",
-          content: `तुम VP AI हो। यूज़र के सवालों का जवाब आसान, साफ और आकर्षक भाषा (Hindi + Bhojpuri mix) में दो। अगर फोटो भेजी गई है, तो फोटो में दिख रही चीज़ या सवाल को बहुत अच्छे से समझकर टीचर की तरह समझाओ। जवाब हमेशा पॉइंट्स में और साफ लिखो। फालतू टेबल या अजीब सिंबल मत बनाओ।`,
+          content: `तुम VP AI हो। यूज़र के सवालों का जवाब आसान, साफ और आकर्षक भाषा (Hindi + Bhojpuri mix) में दो। अगर फोटो भेजी गई है, तो फोटो में दिख रही चीज़ या सवाल को बहुत अच्छे से समझकर टीचर की तरह समझाओ। जवाब हमेशा पॉइंट्स में और साफ लिखो।`,
         },
         {
           role: "user",
