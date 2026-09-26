@@ -20,7 +20,7 @@ export async function POST(request) {
     const groq = new Groq({ apiKey });
 
     const response = await groq.chat.completions.create({
-      model: "llama3-8b-8192",
+      model: "gemma2-9b-it",
       messages: [
         {
           role: "system",
