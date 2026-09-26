@@ -19,8 +19,8 @@ export async function POST(request) {
 
     const groq = new Groq({ apiKey });
 
-    // अगर फोटो है तो Qwen Vision, सामान्य चैट के लिए gpt-oss-20b
-    const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
+    // Groq का एक्टिव मॉडल
+    const modelToUse = "openai/gpt-oss-20b";
 
     let userContent = [];
     if (image) {
@@ -57,4 +57,3 @@ export async function POST(request) {
     );
   }
 }
-
