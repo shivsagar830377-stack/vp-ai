@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
-// Markdown को सुंदर HTML में बदलने वाला आसान फंक्शन
-function renderFormattedText(text) {
+// Markdown को सुंदर और साफ HTML में बदलने वाला क्लीन पार्सर
+function renderCleanContent(text) {
   if (!text) return null;
 
   const lines = text.split("\n");
@@ -11,138 +11,192 @@ function renderFormattedText(text) {
   return lines.map((line, index) => {
     let cleanLine = line.trim();
 
-    // खाली लाइन
     if (!cleanLine) {
       return <div key={index} style={{ height: "10px" }} />;
     }
 
-    // Divider (---)
+    // Divider
     if (cleanLine === "---" || cleanLine === "***") {
-      return <hr key={index} style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" }} />;
+      return <hr key={index} style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "14px 0" }} />;
     }
 
     // Headings (### या ## या #)
     if (cleanLine.startsWith("#")) {
-      const headingText = cleanLine.replace(/^#+\s*/, "");
+      const heading = cleanLine.replace(/^#+\s*/, "");
       return (
-        <h3 key={index} style={{ fontSize: "18px", fontWeight: "700", color: "#1a202c", margin: "16px 0 8px 0" }}>
-          {formatInline(headingText)}
+        <h3 key={index} style={{ fontSize: "17px", fontWeight: "700", color: "#1e293b", margin: "14px 0 6px 0" }}>
+          {formatBold(heading)}
         </h3>
       );
     }
 
-    // List items (- या * या •)
+    // Bullet Points (- या * या •)
     if (cleanLine.startsWith("- ") || cleanLine.startsWith("* ") || cleanLine.startsWith("• ")) {
-      const bulletText = cleanLine.replace(/^[-*•]\s*/, "");
+      const bullet = cleanLine.replace(/^[-*•]\s*/, "");
       return (
-        <li key={index} style={{ marginLeft: "20px", marginBottom: "6px", lineHeight: "1.6", color: "#2d3748" }}>
-          {formatInline(bulletText)}
-        </li>
+        <div key={index} style={{ display: "flex", gap: "8px", marginLeft: "10px", marginBottom: "6px", lineHeight: "1.6" }}>
+          <span style={{ color: "#2563eb", fontWeight: "bold" }}>•</span>
+          <span style={{ color: "#334155" }}>{formatBold(bullet)}</span>
+        </div>
       );
     }
 
-    // सामान्य पैराग्राफ
+    // Numbered List (1. 2. आदि)
+    if (/^\d+\.\s/.test(cleanLine)) {
+      return (
+        <div key={index} style={{ marginLeft: "10px", marginBottom: "6px", lineHeight: "1.6", color: "#334155" }}>
+          {formatBold(cleanLine)}
+        </div>
+      );
+    }
+
+    // Normal paragraph
     return (
-      <p key={index} style={{ margin: "6px 0", lineHeight: "1.6", color: "#2d3748" }}>
-        {formatInline(cleanLine)}
+      <p key={index} style={{ margin: "5px 0", lineHeight: "1.6", color: "#334155" }}>
+        {formatBold(cleanLine)}
       </p>
     );
   });
 }
 
-// **bold** को असली बोल्ड में बदलने वाला फंक्शन
-function formatInline(str) {
-  // अगर टेबल की लाइन हो तो साधारण टेक्स्ट बना दें
+function formatBold(str) {
+  // टेबल लाइन्स को साफ़ करें
   if (str.startsWith("|") && str.endsWith("|")) {
-    return str.replace(/\|/g, " ").replace(/-+/g, "").trim();
+    str = str.replace(/\|/g, " ").replace(/-+/g, "").trim();
   }
-
   const parts = str.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} style={{ color: "#000", fontWeight: "600" }}>{part.slice(2, -2)}</strong>;
+      return <strong key={i} style={{ color: "#0f172a", fontWeight: "600" }}>{part.slice(2, -2)}</strong>;
     }
     return part;
   });
 }
 
 export default function Home() {
-  const [message, setMessage] = useState("");
-  const [reply, setReply] = useState("");
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nपढ़ाई-लिखाई, कोडिंग या कवनो भी सवाल होखे, बेझिझक पूछीं!",
+    },
+  ]);
   const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
-  async function sendMessage() {
-    if (!message.trim() || loading) return;
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
+  async function handleSend() {
+    if (!input.trim() || loading) return;
+
+    const userMsg = input.trim();
+    setInput("");
+    
+    // यूज़र का मैसेज जोड़ें
+    const newHistory = [...messages, { role: "user", content: userMsg }];
+    setMessages(newHistory);
     setLoading(true);
-    setReply("");
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message: userMsg }),
       });
 
       const data = await response.json();
       if (data.reply) {
-        setReply(data.reply);
+        setMessages([...newHistory, { role: "assistant", content: data.reply }]);
       } else {
-        setReply(data.error || "कोई जवाब नहीं मिला।");
+        setMessages([...newHistory, { role: "assistant", content: data.error || "कोई जवाब नहीं मिल पाया।" }]);
       }
-    } catch (error) {
-      setReply("कनेक्शन में समस्या हुई। कृपया दोबारा प्रयास करें।");
+    } catch (err) {
+      setMessages([...newHistory, { role: "assistant", content: "कनेक्शन में समस्या हुई। कृपया दोबारा प्रयास करें।" }]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#f7fafc", padding: "20px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      <div style={{ maxWidth: "680px", margin: "0 auto", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
-        
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px", borderBottom: "1px solid #edf2f7", paddingBottom: "16px" }}>
-          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "bold", fontSize: "18px" }}>
+    <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      {/* Top Navbar */}
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>
             VP
           </div>
           <div>
-            <h1 style={{ fontSize: "20px", margin: 0, color: "#1a202c" }}>VP AI Assistant</h1>
-            <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: "500" }}>● ऑनलाइन</span>
+            <h1 style={{ fontSize: "16px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
+            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन</span>
           </div>
         </div>
+        <span style={{ fontSize: "11px", background: "#f1f5f9", padding: "4px 8px", borderRadius: "6px", color: "#64748b", fontWeight: "500" }}>
+          Next-Gen AI
+        </span>
+      </header>
 
-        {/* Output Box */}
-        {reply && (
-          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "18px", marginBottom: "20px" }}>
-            <div style={{ fontWeight: "600", fontSize: "14px", color: "#4b5563", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <span>🤖</span> VP AI:
+      {/* Chat Messages Container */}
+      <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            style={{
+              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+              maxWidth: "88%",
+              background: msg.role === "user" ? "#2563eb" : "#ffffff",
+              color: msg.role === "user" ? "#ffffff" : "#1e293b",
+              padding: "12px 16px",
+              borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              border: msg.role === "assistant" ? "1px solid #e2e8f0" : "none",
+            }}
+          >
+            {msg.role === "assistant" && (
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", marginBottom: "6px" }}>
+                VP AI
+              </div>
+            )}
+            <div>
+              {msg.role === "user" ? (
+                <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
+              ) : (
+                renderCleanContent(msg.content)
+              )}
             </div>
-            <div>{renderFormattedText(reply)}</div>
+          </div>
+        ))}
+
+        {loading && (
+          <div style={{ alignSelf: "flex-start", background: "#ffffff", padding: "12px 18px", borderRadius: "16px 16px 16px 4px", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "14px", fontStyle: "italic" }}>
+            VP AI सोच रहा है... ✍️
           </div>
         )}
+        <div ref={chatEndRef} />
+      </div>
 
-        {/* Input Box */}
-        <div style={{ display: "flex", gap: "10px" }}>
+      {/* Bottom Sticky Input Bar */}
+      <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "12px 16px" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", gap: "10px" }}>
           <input
             type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="अपना सवाल लिखें..."
-            style={{ flex: 1, padding: "14px 16px", fontSize: "16px", borderRadius: "12px", border: "1.5px solid #e2e8f0", outline: "none" }}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="सवाल लिखीं (जैसे: Photosynthesis समझा दो)..."
+            style={{ flex: 1, padding: "12px 16px", fontSize: "15px", borderRadius: "24px", border: "1.5px solid #cbd5e1", outline: "none" }}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
           <button
-            onClick={sendMessage}
+            onClick={handleSend}
             disabled={loading}
-            style={{ padding: "0 24px", fontSize: "16px", fontWeight: "600", borderRadius: "12px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer" }}
+            style={{ padding: "0 20px", fontSize: "15px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer" }}
           >
-            {loading ? "..." : "भेजें"}
+            भेजें
           </button>
         </div>
-
       </div>
     </main>
   );
 }
-       
+
