@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 
-// Markdown को सुंदर और साफ लुक देने वाला पार्सर
 function renderCleanContent(text) {
   if (!text) return null;
 
@@ -69,10 +68,11 @@ function formatBold(str) {
 
 export default function Home() {
   const [input, setInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के भी पूछ सकीं, लिख के भी, आ फोटो भी बनवा सकीं!",
+      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के, लिख के या कवनो **फोटो अपलोड** करके भी सवाल पूछ सकीं!",
       type: "text",
     },
   ]);
@@ -80,20 +80,21 @@ export default function Home() {
   const [speakingIdx, setSpeakingIdx] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // माइक (Speech to Text) सेटअप
+  // Speech Recognition (माइक)
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = "hi-IN"; // हिंदी और हिंग्लिश दोनों समझता है
+      recognition.lang = "hi-IN";
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -101,22 +102,16 @@ export default function Home() {
         setIsListening(false);
       };
 
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
 
       recognitionRef.current = recognition;
     }
   }, []);
 
-  // माइक चालू/बंद करने का फंक्शन
   function toggleListening() {
     if (!recognitionRef.current) {
-      alert("आपके ब्राउज़र में माइक वॉयस टाइपिंग सपोर्ट नहीं है। कृपया Chrome ब्राउज़र का उपयोग करें।");
+      alert("माइक सपोर्ट केवल Chrome ब्राउज़र में उपलब्ध है।");
       return;
     }
 
@@ -133,10 +128,22 @@ export default function Home() {
     }
   }
 
-  // आवाज़ में सुनाने वाला फंक्शन (Text to Speech)
+  // फोटो चुनना और Base64 में बदलना
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // आवाज़ में सुनाना
   function handleSpeak(text, idx) {
     if (!("speechSynthesis" in window)) {
-      alert("आपके ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
+      alert("ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
       return;
     }
 
@@ -160,58 +167,30 @@ export default function Home() {
   }
 
   async function handleSend() {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !selectedImage) || loading) return;
 
     const userText = input.trim();
-    setInput("");
+    const userImage = selectedImage;
 
-    const updatedHistory = [...messages, { role: "user", content: userText, type: "text" }];
+    setInput("");
+    setSelectedImage(null);
+
+    const newUserMsg = {
+      role: "user",
+      content: userText || "इस फोटो को समझाइए",
+      userImage: userImage,
+      type: "text",
+    };
+
+    const updatedHistory = [...messages, newUserMsg];
     setMessages(updatedHistory);
     setLoading(true);
-
-    const isImageRequest = /(photo|image|picture|diagram|चित्र|फोटो|तस्वीर|डायग्राम)/i.test(userText);
-
-    if (isImageRequest) {
-      try {
-        const res = await fetch("/api/image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: userText }),
-        });
-        const data = await res.json();
-
-        if (data.imageUrl) {
-          setMessages([
-            ...updatedHistory,
-            {
-              role: "assistant",
-              content: `रउआ खातिर चित्र तैयार बा: "${userText}"`,
-              type: "image",
-              imageUrl: data.imageUrl,
-            },
-          ]);
-        } else {
-          setMessages([
-            ...updatedHistory,
-            { role: "assistant", content: "फोटो बनाने में समस्या आई।", type: "text" },
-          ]);
-        }
-      } catch (err) {
-        setMessages([
-          ...updatedHistory,
-          { role: "assistant", content: "इमेज सर्वर से कनेक्ट नहीं हो सका।", type: "text" },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText }),
+        body: JSON.stringify({ message: userText, image: userImage }),
       });
 
       const data = await response.json();
@@ -229,7 +208,7 @@ export default function Home() {
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {/* Top Header */}
+      {/* Top Navbar */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>
@@ -237,12 +216,12 @@ export default function Home() {
           </div>
           <div>
             <h1 style={{ fontSize: "16px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
-            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Voice + Mic Active)</span>
+            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Vision + Mic Active)</span>
           </div>
         </div>
       </header>
 
-      {/* Chat Messages */}
+      {/* Messages Area */}
       <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {messages.map((msg, idx) => (
           <div
@@ -261,87 +240,119 @@ export default function Home() {
             {msg.role === "assistant" && (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", borderBottom: "1px solid #f1f5f9", paddingBottom: "4px" }}>
                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#64748b" }}>VP AI</span>
-                {msg.type === "text" && (
-                  <button
-                    onClick={() => handleSpeak(msg.content, idx)}
-                    style={{ background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: speakingIdx === idx ? "#dc2626" : "#475569", fontWeight: "600" }}
-                  >
-                    {speakingIdx === idx ? "⏹️ रोकें" : "🔊 सुनें"}
-                  </button>
-                )}
+                <button
+                  onClick={() => handleSpeak(msg.content, idx)}
+                  style={{ background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: speakingIdx === idx ? "#dc2626" : "#475569", fontWeight: "600" }}
+                >
+                  {speakingIdx === idx ? "⏹️ रोकें" : "🔊 सुनें"}
+                </button>
               </div>
             )}
 
-            {msg.role === "user" ? (
-              <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
-            ) : (
-              <div>
-                {renderCleanContent(msg.content)}
-                {msg.type === "image" && msg.imageUrl && (
-                  <div style={{ marginTop: "12px" }}>
-                    <img
-                      src={msg.imageUrl}
-                      alt="AI Generated"
-                      style={{ width: "100%", borderRadius: "10px", border: "1px solid #e2e8f0", display: "block" }}
-                      loading="lazy"
-                    />
-                  </div>
-                )}
+            {/* अगर यूज़र ने फोटो भेजी है */}
+            {msg.userImage && (
+              <div style={{ marginBottom: "8px" }}>
+                <img src={msg.userImage} alt="Uploaded" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }} />
               </div>
             )}
+
+            <div>
+              {msg.role === "user" ? (
+                <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
+              ) : (
+                renderCleanContent(msg.content)
+              )}
+            </div>
           </div>
         ))}
 
         {loading && (
           <div style={{ alignSelf: "flex-start", background: "#ffffff", padding: "12px 18px", borderRadius: "16px 16px 16px 4px", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "14px", fontStyle: "italic" }}>
-            VP AI सोच रहा है... ✍️
+            VP AI फोटो और सवाल समझ रहा है... 🧐
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input Bar with Mic */}
-      <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "12px 16px" }}>
+      {/* Selected Image Preview (ऊपर छोटी थंबनेल) */}
+      {selectedImage && (
+        <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", padding: "6px 16px", display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
+          <img src={selectedImage} alt="Preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
+          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>फोटो सेलेक्ट हो गई है</span>
+          <button onClick={() => setSelectedImage(null)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: "16px", cursor: "pointer" }}>✕</button>
+        </div>
+      )}
+
+      {/* Input Bar */}
+      <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "10px 14px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
           
-          {/* Mic Button */}
+          {/* छिपा हुआ File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+
+          {/* 📎 फोटो अपलोड बटन */}
           <button
-            onClick={toggleListening}
-            title="बोलकर टाइप करें"
+            onClick={() => fileInputRef.current?.click()}
+            title="फोटो जोड़ें"
             style={{
-              width: "44px",
-              height: "44px",
+              width: "40px",
+              height: "40px",
               borderRadius: "50%",
-              border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
-              background: isListening ? "#fee2e2" : "#f8fafc",
-              color: isListening ? "#ef4444" : "#475569",
+              border: "1.5px solid #cbd5e1",
+              background: "#f8fafc",
               fontSize: "18px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0,
-              transition: "all 0.2s ease"
+              flexShrink: 0
+            }}
+          >
+            📎
+          </button>
+
+          {/* 🎙️ माइक बटन */}
+          <button
+            onClick={toggleListening}
+            title="बोलकर टाइप करें"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
+              background: isListening ? "#fee2e2" : "#f8fafc",
+              fontSize: "18px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0
             }}
           >
             {isListening ? "🔴" : "🎙️"}
           </button>
 
-          {/* Text Input */}
+          {/* टेक्स्ट बॉक्स */}
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isListening ? "सुन रहे हैं, बोलिए..." : "सवाल लिखें या माइक दबाकर बोलें..."}
-            style={{ flex: 1, padding: "12px 16px", fontSize: "15px", borderRadius: "24px", border: isListening ? "1.5px solid #ef4444" : "1.5px solid #cbd5e1", outline: "none" }}
+            placeholder={selectedImage ? "इस फोटो के बारे में क्या पूछना है?" : "सवाल लिखें या फोटो जोड़ें..."}
+            style={{ flex: 1, padding: "10px 16px", fontSize: "15px", borderRadius: "24px", border: "1.5px solid #cbd5e1", outline: "none" }}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
 
-          {/* Send Button */}
+          {/* भेजें बटन */}
           <button
             onClick={handleSend}
             disabled={loading}
-            style={{ padding: "0 18px", height: "44px", fontSize: "15px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer", flexShrink: 0 }}
+            style={{ padding: "0 18px", height: "40px", fontSize: "14px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer", flexShrink: 0 }}
           >
             भेजें
           </button>
