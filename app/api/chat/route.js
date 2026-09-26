@@ -20,7 +20,7 @@ export async function POST(request) {
     const groq = new Groq({ apiKey });
 
     const response = await groq.chat.completions.create({
-      model: "gemma2-9b-it",
+      model: "openai/gpt-oss-20b",
       messages: [
         {
           role: "system",
