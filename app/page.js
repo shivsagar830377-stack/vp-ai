@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 
-// यहाँ अपनी प्रोफ़ाइल फ़ोटो का लिंक डालें (यह एक सुंदर AI रोबोट अवतार है)
 https://ibb.co/8g6q6t25
+
 function renderCleanContent(text) {
   if (!text) return null;
 
@@ -90,23 +90,25 @@ export default function Home() {
   }, [messages, loading]);
 
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "hi-IN";
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "hi-IN";
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setInput((prev) => (prev ? prev + " " + transcript : transcript));
-        setIsListening(false);
-      };
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setInput((prev) => (prev ? prev + " " + transcript : transcript));
+          setIsListening(false);
+        };
 
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
 
-      recognitionRef.current = recognition;
+        recognitionRef.current = recognition;
+      }
     }
   }, []);
 
@@ -141,7 +143,7 @@ export default function Home() {
   }
 
   function handleSpeak(text, idx) {
-    if (!("speechSynthesis" in window)) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       alert("ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
       return;
     }
@@ -207,10 +209,8 @@ export default function Home() {
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {/* Top Navbar with Profile Photo */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* AI Profile Avatar */}
           <img
             src={BOT_AVATAR}
             alt="VP AI Avatar"
@@ -223,7 +223,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Messages */}
       <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {messages.map((msg, idx) => (
           <div
@@ -283,7 +282,6 @@ export default function Home() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Preview Selected Photo */}
       {selectedImage && (
         <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", padding: "6px 16px", display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
           <img src={selectedImage} alt="Preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
@@ -292,10 +290,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Input Bar */}
       <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "10px 14px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
-          
           <input
             type="file"
             ref={fileInputRef}
