@@ -11,29 +11,39 @@ export async function POST(request) {
       );
     }
 
-    const { message } = await request.json();
+    const { message, image } = await request.json();
 
-    if (!message || !message.trim()) {
-      return Response.json({ error: "Message खाली है" }, { status: 400 });
+    if (!message && !image) {
+      return Response.json({ error: "मैसेज या फोटो खाली है!" }, { status: 400 });
     }
 
     const groq = new Groq({ apiKey });
 
+    // अगर फोटो साथ में भेजी गई है तो विज़न मॉडल इस्तेमाल करें
+    const modelToUse = image ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
+
+    let userContent = [];
+    if (image) {
+      userContent.push({
+        type: "image_url",
+        image_url: { url: image },
+      });
+    }
+    userContent.push({
+      type: "text",
+      text: message || "इस फोटो को देखकर आसान हिंदी और भोजपुरी में समझाइए।",
+    });
+
     const response = await groq.chat.completions.create({
-      model: "openai/gpt-oss-20b",
+      model: modelToUse,
       messages: [
         {
           role: "system",
-          content: `तुम VP AI हो - एक बहुत ही स्मार्ट, दोस्ताना और ज्ञानी AI असिस्टेंट।
-तुम्हारा अंदाज़:
-1. यूज़र को बहुत ही सरल और अपनापन भरी भाषा (Hindi + प्यारी Bhojpuri का हल्का टच) में समझाओ।
-2. जब भी कोई पढ़ाई, विज्ञान या कोडिंग से जुड़ा सवाल पूछे, तो एक बेहतरीन शिक्षक की तरह साफ़-सुथरे 'Notes' के रूप में समझाओ।
-3. जवाब में सीधी हेडिंग्स (# या ##), साफ़ बुलेट पॉइंट्स (- या *) और ज़रूरी शब्दों को बोल्ड (**शब्द**) करो।
-4. कोई भी अजीब टेबल सिंबल (|---|) या फालतू स्टार/हैश मत बिखेरो। जवाब इतना साफ़ होना चाहिए कि पढ़ने वाले का दिल खुश हो जाए।`,
+          content: `तुम VP AI हो। यूज़र के सवालों का जवाब आसान, साफ और आकर्षक भाषा (Hindi + Bhojpuri mix) में दो। अगर फोटो भेजी गई है, तो फोटो में दिख रही चीज़ या सवाल को बहुत अच्छे से समझकर टीचर की तरह समझाओ। जवाब हमेशा पॉइंट्स में और साफ लिखो।`,
         },
         {
           role: "user",
-          content: message,
+          content: userContent,
         },
       ],
     });
