@@ -72,19 +72,68 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nपढ़ाई-लिखाई, कोडिंग, फोटो बनवावे खातिर या कवनो भी सवाल होखे, बेझिझक पूछीं!",
+      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के भी पूछ सकीं, लिख के भी, आ फोटो भी बनवा सकीं!",
       type: "text",
     },
   ]);
   const [loading, setLoading] = useState(false);
   const [speakingIdx, setSpeakingIdx] = useState(null);
+  const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Voice बोलकर सुनाने वाला फंक्शन (Web Speech API)
+  // माइक (Speech to Text) सेटअप
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "hi-IN"; // हिंदी और हिंग्लिश दोनों समझता है
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput((prev) => (prev ? prev + " " + transcript : transcript));
+        setIsListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  // माइक चालू/बंद करने का फंक्शन
+  function toggleListening() {
+    if (!recognitionRef.current) {
+      alert("आपके ब्राउज़र में माइक वॉयस टाइपिंग सपोर्ट नहीं है। कृपया Chrome ब्राउज़र का उपयोग करें।");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        setIsListening(false);
+      }
+    }
+  }
+
+  // आवाज़ में सुनाने वाला फंक्शन (Text to Speech)
   function handleSpeak(text, idx) {
     if (!("speechSynthesis" in window)) {
       alert("आपके ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
@@ -98,8 +147,6 @@ export default function Home() {
     }
 
     window.speechSynthesis.cancel();
-
-    // सिंबल हटाकर साफ़ टेक्स्ट बुलवाना
     const cleanText = text.replace(/[*#_~`]/g, "");
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = "hi-IN";
@@ -118,12 +165,10 @@ export default function Home() {
     const userText = input.trim();
     setInput("");
 
-    // यूज़र मैसेज जोड़ें
     const updatedHistory = [...messages, { role: "user", content: userText, type: "text" }];
     setMessages(updatedHistory);
     setLoading(true);
 
-    // चेक करें कि क्या यूज़र ने फोटो/इमेज बनाने को कहा है
     const isImageRequest = /(photo|image|picture|diagram|चित्र|फोटो|तस्वीर|डायग्राम)/i.test(userText);
 
     if (isImageRequest) {
@@ -162,7 +207,6 @@ export default function Home() {
       return;
     }
 
-    // सामान्य चैट रिक्वेस्ट
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -177,7 +221,7 @@ export default function Home() {
         setMessages([...updatedHistory, { role: "assistant", content: data.error || "कोई जवाब नहीं मिला।", type: "text" }]);
       }
     } catch (err) {
-      setMessages([...updatedHistory, { role: "assistant", content: "कनेक्शन में समस्या हुई। कृपया दोबारा प्रयास करें।", type: "text" }]);
+      setMessages([...updatedHistory, { role: "assistant", content: "कनेक्शन में समस्या हुई। दोबारा प्रयास करें।", type: "text" }]);
     } finally {
       setLoading(false);
     }
@@ -185,7 +229,7 @@ export default function Home() {
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {/* Header */}
+      {/* Top Header */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>
@@ -193,12 +237,12 @@ export default function Home() {
           </div>
           <div>
             <h1 style={{ fontSize: "16px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
-            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Voice + Image Active)</span>
+            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Voice + Mic Active)</span>
           </div>
         </div>
       </header>
 
-      {/* Messages */}
+      {/* Chat Messages */}
       <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {messages.map((msg, idx) => (
           <div
@@ -228,13 +272,11 @@ export default function Home() {
               </div>
             )}
 
-            {/* टेक्स्ट जवाब */}
             {msg.role === "user" ? (
               <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
             ) : (
               <div>
                 {renderCleanContent(msg.content)}
-                {/* अगर इमेज आई है तो चित्र दिखाना */}
                 {msg.type === "image" && msg.imageUrl && (
                   <div style={{ marginTop: "12px" }}>
                     <img
@@ -252,27 +294,54 @@ export default function Home() {
 
         {loading && (
           <div style={{ alignSelf: "flex-start", background: "#ffffff", padding: "12px 18px", borderRadius: "16px 16px 16px 4px", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "14px", fontStyle: "italic" }}>
-            VP AI तैयार कर रहा है... ✍️🎨
+            VP AI सोच रहा है... ✍️
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input Bar with Mic */}
       <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "12px 16px" }}>
-        <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", gap: "10px" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
+          
+          {/* Mic Button */}
+          <button
+            onClick={toggleListening}
+            title="बोलकर टाइप करें"
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
+              background: isListening ? "#fee2e2" : "#f8fafc",
+              color: isListening ? "#ef4444" : "#475569",
+              fontSize: "18px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              transition: "all 0.2s ease"
+            }}
+          >
+            {isListening ? "🔴" : "🎙️"}
+          </button>
+
+          {/* Text Input */}
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="सवाल पूछें या 'फोटो बनाओ' लिखें..."
-            style={{ flex: 1, padding: "12px 16px", fontSize: "15px", borderRadius: "24px", border: "1.5px solid #cbd5e1", outline: "none" }}
+            placeholder={isListening ? "सुन रहे हैं, बोलिए..." : "सवाल लिखें या माइक दबाकर बोलें..."}
+            style={{ flex: 1, padding: "12px 16px", fontSize: "15px", borderRadius: "24px", border: isListening ? "1.5px solid #ef4444" : "1.5px solid #cbd5e1", outline: "none" }}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
+
+          {/* Send Button */}
           <button
             onClick={handleSend}
             disabled={loading}
-            style={{ padding: "0 20px", fontSize: "15px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer" }}
+            style={{ padding: "0 18px", height: "44px", fontSize: "15px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer", flexShrink: 0 }}
           >
             भेजें
           </button>
