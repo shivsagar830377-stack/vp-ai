@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 
 // यहाँ अपनी प्रोफ़ाइल फ़ोटो का लिंक डालें (यह एक सुंदर AI रोबोट अवतार है)
-const BOT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=VPAI";
-
+https://ibb.co/8g6q6t25
 function renderCleanContent(text) {
   if (!text) return null;
 
