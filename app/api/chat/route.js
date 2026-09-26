@@ -19,8 +19,8 @@ export async function POST(request) {
 
     const groq = new Groq({ apiKey });
 
-    // अगर फोटो साथ में भेजी गई है तो विज़न मॉडल इस्तेमाल करें
-    const modelToUse = image ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
+    // अगर फोटो है तो Qwen Vision, सामान्य चैट के लिए gpt-oss-20b
+    const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
 
     let userContent = [];
     if (image) {
@@ -39,7 +39,7 @@ export async function POST(request) {
       messages: [
         {
           role: "system",
-          content: `तुम VP AI हो। यूज़र के सवालों का जवाब आसान, साफ और आकर्षक भाषा (Hindi + Bhojpuri mix) में दो। अगर फोटो भेजी गई है, तो फोटो में दिख रही चीज़ या सवाल को बहुत अच्छे से समझकर टीचर की तरह समझाओ। जवाब हमेशा पॉइंट्स में और साफ लिखो।`,
+          content: `तुम VP AI हो। यूज़र के सवालों का जवाब आसान, साफ और आकर्षक भाषा (Hindi + Bhojpuri mix) में दो। अगर फोटो भेजी गई है, तो फोटो में दिख रही चीज़ या सवाल को बहुत अच्छे से समझकर टीचर की तरह समझाओ। जवाब हमेशा पॉइंट्स में और साफ लिखो। फालतू टेबल या अजीब सिंबल मत बनाओ।`,
         },
         {
           role: "user",
@@ -57,3 +57,4 @@ export async function POST(request) {
     );
   }
 }
+
