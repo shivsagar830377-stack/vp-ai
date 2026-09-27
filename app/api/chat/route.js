@@ -18,20 +18,22 @@ export async function POST(request) {
     }
 
     const groq = new Groq({ apiKey });
-    const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
+
+    // अगर फोटो है तो विज़न मॉडल, सामान्य टेक्स्ट/डायग्राम के लिए सबसे शक्तिशाली Llama 3.3 70B
+    const modelToUse = image ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
 
     let systemPrompt = `तुम VP AI Assistant हो। तुम्हारी भाषा सरल Hindi + Bhojpuri mix रहेगी।
 
 सख्त निर्देश (DIAGRAM RULE):
-जब भी यूज़र किसी अंग (जैसे Human Heart), विज्ञान या प्रक्रिया का 'डायग्राम', 'फोटो', 'चित्र' या 'समझाओ' कहे:
-1. सबसे पहले एक स्पष्ट और विस्तृत विज़ुअल फ्लो-डायग्राम बनाओ (बॉक्स, तीर ──▶, ▼, ┌──┐ और लेबल्स के साथ)।
-   डायग्राम को \`\`\`diagram ... \`\`\` कोड ब्लॉक में रखो।
+जब भी यूज़र किसी अंग (जैसे Human Heart), प्रोसेस या टॉपिक का 'डायग्राम', 'diagram', 'चित्र', 'फ्लोचार्ट' या 'समझाओ' कहे:
+1. सबसे पहले एक स्पष्ट और सुंदर ASCII/Box Art विज़ुअल फ्लो-डायग्राम बनाओ (बॉक्स, तीर ──▶, ▼, ┌──┐ और लेबल्स के साथ)।
+   डायग्राम को \`\`\`diagram ... \`\`\` कोड ब्लॉक के अंदर रखो।
    डायग्राम में साफ-साफ तीर बनाकर दिखाओ कि कौन सी चीज़ कहाँ से आती है और कहाँ जाती है।
 2. डायग्राम के तुरंत नीचे:
    - 🔍 मुख्य अंग / भाग (Labels Explanation)
    - 🔄 स्टेप-बाय-स्टेप काम करने का तरीका (Step-by-Step Flow)
    - 💡 सरल निष्कर्ष (Summary / Exam Tip)
-3. लंबी थ्योरी मत लिखो, बिल्कुल विजुअल तरीके से समझाओ जैसे यूट्यूब या इन्फोग्राफिक में समझाया जाता है।`;
+3. केवल सादा टेक्स्ट और डायग्राम दो। कोई आंतरिक टूल कॉल मत करो।`;
 
     if (isNotesMode) {
       systemPrompt = `तुम VP AI Notes Assistant हो। परीक्षा उपयोगी नोट्स बनाओ।
@@ -56,6 +58,7 @@ export async function POST(request) {
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
+      temperature: 0.6,
     });
 
     const reply = response.choices?.[0]?.message?.content || "कोई जवाब नहीं मिला।";
