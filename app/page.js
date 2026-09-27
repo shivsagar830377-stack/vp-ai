@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 
-// आपकी प्रोफ़ाइल फ़ोटो का लिंक
 const BOT_AVATAR = "https://i.postimg.cc/C5pbh5zN/file-00000000583082118b16369073f60da3.png";
 
 function renderCleanContent(text) {
@@ -58,9 +57,6 @@ function renderCleanContent(text) {
 
 function formatBold(str) {
   if (!str) return "";
-  if (str.startsWith("|") && str.endsWith("|")) {
-    str = str.replace(/\|/g, " ").replace(/-+/g, "").trim();
-  }
   const parts = str.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
@@ -72,19 +68,18 @@ function formatBold(str) {
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [isNotesMode, setIsNotesMode] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के, लिख के या कवनो **फोटो अपलोड** करके भी सवाल पूछ सकीं!",
-      type: "text",
+      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nकवनो भी सवाल पूछीं, या ऊपर **'📝 नोट्स मोड'** ऑन करके किसी भी टॉपिक के नोट्स बनवा लीं!",
     },
   ]);
   const [loading, setLoading] = useState(false);
   const [speakingIdx, setSpeakingIdx] = useState(null);
+  const [copiedIdx, setCopiedIdx] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef(null);
-  const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
@@ -97,7 +92,6 @@ export default function Home() {
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
-        recognition.interimResults = false;
         recognition.lang = "hi-IN";
 
         recognition.onresult = (event) => {
@@ -133,17 +127,6 @@ export default function Home() {
     }
   }
 
-  function handleImageSelect(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSelectedImage(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }
-
   function handleSpeak(text, idx) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       alert("ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
@@ -169,22 +152,19 @@ export default function Home() {
     window.speechSynthesis.speak(utterance);
   }
 
+  function handleCopy(text, idx) {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  }
+
   async function handleSend() {
-    if ((!input.trim() && !selectedImage) || loading) return;
+    if (!input.trim() || loading) return;
 
     const userText = input.trim();
-    const userImage = selectedImage;
-
     setInput("");
-    setSelectedImage(null);
 
-    const newUserMsg = {
-      role: "user",
-      content: userText || "इस फोटो को समझाइए",
-      userImage: userImage,
-      type: "text",
-    };
-
+    const newUserMsg = { role: "user", content: userText };
     const updatedHistory = [...messages, newUserMsg];
     setMessages(updatedHistory);
     setLoading(true);
@@ -193,17 +173,17 @@ export default function Home() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, image: userImage }),
+        body: JSON.stringify({ message: userText, isNotesMode }),
       });
 
       const data = await response.json();
       if (data.reply) {
-        setMessages([...updatedHistory, { role: "assistant", content: data.reply, type: "text" }]);
+        setMessages([...updatedHistory, { role: "assistant", content: data.reply }]);
       } else {
-        setMessages([...updatedHistory, { role: "assistant", content: data.error || "कोई जवाब नहीं मिला।", type: "text" }]);
+        setMessages([...updatedHistory, { role: "assistant", content: data.error || "कोई जवाब नहीं मिला।" }]);
       }
     } catch (err) {
-      setMessages([...updatedHistory, { role: "assistant", content: "कनेक्शन में समस्या हुई।", type: "text" }]);
+      setMessages([...updatedHistory, { role: "assistant", content: "कनेक्शन में समस्या हुई।" }]);
     } finally {
       setLoading(false);
     }
@@ -212,28 +192,48 @@ export default function Home() {
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* हेडर */}
-      <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
             src={BOT_AVATAR}
             alt="VP AI Avatar"
-            style={{ width: "42px", height: "42px", borderRadius: "50%", background: "#eff6ff", border: "2px solid #2563eb", objectFit: "cover" }}
+            style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#eff6ff", border: "2px solid #2563eb", objectFit: "cover" }}
           />
           <div>
-            <h1 style={{ fontSize: "16px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
-            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Vision + Mic Active)</span>
+            <h1 style={{ fontSize: "15px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
+            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन</span>
           </div>
         </div>
+
+        {/* नोट्स मोड टॉगल बटन */}
+        <button
+          onClick={() => setIsNotesMode(!isNotesMode)}
+          style={{
+            background: isNotesMode ? "#2563eb" : "#f1f5f9",
+            color: isNotesMode ? "#ffffff" : "#475569",
+            border: "1px solid " + (isNotesMode ? "#2563eb" : "#cbd5e1"),
+            borderRadius: "20px",
+            padding: "5px 12px",
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          📝 {isNotesMode ? "नोट्स मोड ON" : "नोट्स मोड"}
+        </button>
       </header>
 
-      {/* चैट संदेश */}
+      {/* चैट मैसेजेस */}
       <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {messages.map((msg, idx) => (
           <div
             key={idx}
             style={{
               alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              maxWidth: "90%",
+              maxWidth: "92%",
               background: msg.role === "user" ? "#2563eb" : "#ffffff",
               color: msg.role === "user" ? "#ffffff" : "#1e293b",
               padding: "14px 16px",
@@ -252,18 +252,20 @@ export default function Home() {
                   />
                   <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569" }}>VP AI</span>
                 </div>
-                <button
-                  onClick={() => handleSpeak(msg.content, idx)}
-                  style={{ background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: speakingIdx === idx ? "#dc2626" : "#475569", fontWeight: "600" }}
-                >
-                  {speakingIdx === idx ? "⏹️ रोकें" : "🔊 सुनें"}
-                </button>
-              </div>
-            )}
-
-            {msg.userImage && (
-              <div style={{ marginBottom: "8px" }}>
-                <img src={msg.userImage} alt="Uploaded" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }} />
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    onClick={() => handleCopy(msg.content, idx)}
+                    style={{ background: copiedIdx === idx ? "#dcfce7" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: copiedIdx === idx ? "#16a34a" : "#475569", fontWeight: "600" }}
+                  >
+                    {copiedIdx === idx ? "✓ कॉपी हुआ" : "📋 कॉपी"}
+                  </button>
+                  <button
+                    onClick={() => handleSpeak(msg.content, idx)}
+                    style={{ background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: speakingIdx === idx ? "#dc2626" : "#475569", fontWeight: "600" }}
+                  >
+                    {speakingIdx === idx ? "⏹️ रोकें" : "🔊 सुनें"}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -280,43 +282,18 @@ export default function Home() {
         {loading && (
           <div style={{ alignSelf: "flex-start", background: "#ffffff", padding: "12px 18px", borderRadius: "16px 16px 16px 4px", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "14px", fontStyle: "italic", display: "flex", alignItems: "center", gap: "8px" }}>
             <img src={BOT_AVATAR} alt="Thinking" style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }} />
-            VP AI सोच रहा है... ✍️
+            {isNotesMode ? "VP AI नोट्स तैयार कर रहा है... 📝" : "VP AI सोच रहा है... ✍️"}
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* इमेज प्रीव्यू */}
-      {selectedImage && (
-        <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", padding: "6px 16px", display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
-          <img src={selectedImage} alt="Preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
-          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>फोटो सेलेक्ट हो गई है</span>
-          <button onClick={() => setSelectedImage(null)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: "16px", cursor: "pointer" }}>✕</button>
-        </div>
-      )}
-
-      {/* इनपुट बॉक्स */}
+      {/* इनपुट बार */}
       <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "10px 14px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageSelect}
-            accept="image/*"
-            style={{ display: "none" }}
-          />
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            title="फोटो जोड़ें"
-            style={{ width: "40px", height: "40px", borderRadius: "50%", border: "1.5px solid #cbd5e1", background: "#f8fafc", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-          >
-            📎
-          </button>
-
           <button
             onClick={toggleListening}
-            title="बोलकर टाइप करें"
+            title="बोलकर लिखें"
             style={{ width: "40px", height: "40px", borderRadius: "50%", border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1", background: isListening ? "#fee2e2" : "#f8fafc", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
           >
             {isListening ? "🔴" : "🎙️"}
@@ -326,7 +303,7 @@ export default function Home() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={selectedImage ? "इस फोटो के बारे में क्या पूछना है?" : "सवाल लिखें या फोटो जोड़ें..."}
+            placeholder={isNotesMode ? "किस विषय या टॉपिक पर नोट्स बनाना है?" : "सवाल पूछें या नोट्स बनवाएं..."}
             style={{ flex: 1, padding: "10px 16px", fontSize: "15px", borderRadius: "24px", border: "1.5px solid #cbd5e1", outline: "none" }}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
@@ -336,7 +313,7 @@ export default function Home() {
             disabled={loading}
             style={{ padding: "0 18px", height: "40px", fontSize: "14px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer", flexShrink: 0 }}
           >
-            भेजें
+            {isNotesMode ? "नोट्स बनाएँ" : "भेजें"}
           </button>
         </div>
       </div>
