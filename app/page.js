@@ -68,11 +68,12 @@ function formatBold(str) {
 
 export default function Home() {
   const [input, setInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
   const [isNotesMode, setIsNotesMode] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nकवनो भी सवाल पूछीं, या ऊपर **'📝 नोट्स मोड'** ऑन करके किसी भी टॉपिक के नोट्स बनवा लीं!",
+      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के, लिख के, **फोटो अपलोड (📎)** करके सवाल पूछीं, या ऊपर **'📝 नोट्स मोड'** ऑन करके किसी भी टॉपिक के नोट्स बनवा लीं!",
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -80,6 +81,7 @@ export default function Home() {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
@@ -127,6 +129,17 @@ export default function Home() {
     }
   }
 
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
   function handleSpeak(text, idx) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       alert("ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
@@ -159,12 +172,20 @@ export default function Home() {
   }
 
   async function handleSend() {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !selectedImage) || loading) return;
 
     const userText = input.trim();
-    setInput("");
+    const userImage = selectedImage;
 
-    const newUserMsg = { role: "user", content: userText };
+    setInput("");
+    setSelectedImage(null);
+
+    const newUserMsg = {
+      role: "user",
+      content: userText || (isNotesMode ? "इस फोटो के नोट्स बनाइए" : "इस फोटो को समझाइए"),
+      userImage: userImage,
+    };
+
     const updatedHistory = [...messages, newUserMsg];
     setMessages(updatedHistory);
     setLoading(true);
@@ -173,7 +194,7 @@ export default function Home() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, isNotesMode }),
+        body: JSON.stringify({ message: userText, image: userImage, isNotesMode }),
       });
 
       const data = await response.json();
@@ -201,7 +222,7 @@ export default function Home() {
           />
           <div>
             <h1 style={{ fontSize: "15px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
-            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन</span>
+            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Vision + Mic Active)</span>
           </div>
         </div>
 
@@ -269,6 +290,13 @@ export default function Home() {
               </div>
             )}
 
+            {/* यूज़र की अपलोड की गई फ़ोटो */}
+            {msg.userImage && (
+              <div style={{ marginBottom: "8px" }}>
+                <img src={msg.userImage} alt="Uploaded" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }} />
+              </div>
+            )}
+
             <div>
               {msg.role === "user" ? (
                 <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
@@ -288,9 +316,36 @@ export default function Home() {
         <div ref={chatEndRef} />
       </div>
 
+      {/* इमेज प्रीव्यू */}
+      {selectedImage && (
+        <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", padding: "6px 16px", display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
+          <img src={selectedImage} alt="Preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
+          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>फोटो सेलेक्ट हो गई है</span>
+          <button onClick={() => setSelectedImage(null)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: "16px", cursor: "pointer" }}>✕</button>
+        </div>
+      )}
+
       {/* इनपुट बार */}
       <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "10px 14px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+
+          {/* फोटो अटैचमेंट बटन (📎) */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="फोटो जोड़ें"
+            style={{ width: "40px", height: "40px", borderRadius: "50%", border: "1.5px solid #cbd5e1", background: "#f8fafc", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+          >
+            📎
+          </button>
+
+          {/* माइक बटन */}
           <button
             onClick={toggleListening}
             title="बोलकर लिखें"
@@ -303,7 +358,7 @@ export default function Home() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isNotesMode ? "किस विषय या टॉपिक पर नोट्स बनाना है?" : "सवाल पूछें या नोट्स बनवाएं..."}
+            placeholder={selectedImage ? "इस फोटो के बारे में क्या पूछना है?" : (isNotesMode ? "किस टॉपिक पर नोट्स बनाना है?" : "सवाल पूछें या फोटो जोड़ें...")}
             style={{ flex: 1, padding: "10px 16px", fontSize: "15px", borderRadius: "24px", border: "1.5px solid #cbd5e1", outline: "none" }}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
