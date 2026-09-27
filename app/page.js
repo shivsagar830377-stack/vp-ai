@@ -28,6 +28,31 @@ function renderTextLines(text) {
       return <div key={index} style={{ height: "6px" }} />;
     }
 
+    // Markdown Image Render: ![alt](url)
+    const imgMatch = cleanLine.match(/!\[(.*?)\]\((https?:\/\/.*?)\)/);
+    if (imgMatch) {
+      return (
+        <div key={index} style={{ margin: "14px 0", textAlign: "center" }}>
+          <img
+            src={imgMatch[2]}
+            alt={imgMatch[1] || "Diagram"}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "360px",
+              borderRadius: "12px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+              border: "1px solid #cbd5e1",
+              objectFit: "contain",
+              backgroundColor: "#ffffff",
+            }}
+          />
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px", fontStyle: "italic" }}>
+            🎨 {imgMatch[1] || "विजुअल चित्र"}
+          </div>
+        </div>
+      );
+    }
+
     if (cleanLine === "---" || cleanLine === "***") {
       return (
         <hr
@@ -81,54 +106,6 @@ function renderTextLines(text) {
   });
 }
 
-function renderCleanContent(text) {
-  if (!text) return null;
-
-  if (text.includes("```")) {
-    const parts = text.split(/(```[\s\S]*?```)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("```")) {
-        const cleanCode = part
-          .replace(/^```[a-zA-Z]*\n?/, "")
-          .replace(/```$/, "");
-        return (
-          <div
-            key={i}
-            style={{
-              background: "#090d16",
-              border: "1px solid #1e293b",
-              borderRadius: "10px",
-              padding: "14px",
-              margin: "12px 0",
-              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)",
-              overflowX: "auto",
-            }}
-          >
-            <div style={{ fontSize: "11px", color: "#38bdf8", fontWeight: "700", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "1px" }}>
-              📊 Visual Diagram / Layout
-            </div>
-            <pre
-              style={{
-                color: "#f8fafc",
-                fontFamily: "monospace",
-                fontSize: "13px",
-                lineHeight: "1.45",
-                margin: 0,
-                whiteSpace: "pre",
-              }}
-            >
-              {cleanCode}
-            </pre>
-          </div>
-        );
-      }
-      return <div key={i}>{renderTextLines(part)}</div>;
-    });
-  }
-
-  return renderTextLines(text);
-}
-
 export default function Home() {
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
@@ -137,7 +114,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nकौनों भी टॉपिक पर लिख के, बोल के या **फोटो 📎** भेज के पूछीं। हम ओकर **विजुअल डायग्राम बनाके** एकदम साफ़-साफ़ समझा देब!",
+        "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nकौनों भी टॉपिक पर लिख के, बोल के या **फोटो 📎** भेज के पूछीं। हम ओकर **सचित्र विजुअल डायग्राम बनाके** एकदम साफ़-साफ़ समझा देब!",
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -218,7 +195,11 @@ export default function Home() {
       return;
     }
 
-    const cleanText = text.replace(/[*#_~`]/g, "").replace(/\[.*?\]/g, "").slice(0, 200);
+    const cleanText = text
+      .replace(/!\[.*?\]\(.*?\)/g, "")
+      .replace(/[*#_~`]/g, "")
+      .replace(/\[.*?\]/g, "")
+      .slice(0, 200);
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
@@ -269,6 +250,10 @@ export default function Home() {
       .map((line) => {
         let l = line.trim();
         if (!l) return "<br/>";
+        const imgMatch = l.match(/!\[(.*?)\]\((https?:\/\/.*?)\)/);
+        if (imgMatch) {
+          return `<div style="text-align:center; margin: 15px 0;"><img src="${imgMatch[2]}" style="max-width:90%; max-height:300px; border-radius:8px;" /></div>`;
+        }
         if (l.startsWith("#")) return `<h2>${l.replace(/^#+\s*/, "")}</h2>`;
         if (l.startsWith("- ") || l.startsWith("* "))
           return `<li>${l.replace(/^[-*]\s*/, "")}</li>`;
@@ -288,7 +273,6 @@ export default function Home() {
             h2 { color: #0f172a; font-size: 16px; margin-top: 16px; margin-bottom: 6px; }
             p { margin: 6px 0; font-size: 14px; }
             li { margin-left: 20px; margin-bottom: 4px; font-size: 14px; }
-            pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; }
             .footer { margin-top: 30px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
           </style>
         </head>
@@ -318,7 +302,7 @@ export default function Home() {
 
     const newUserMsg = {
       role: "user",
-      content: userText || (isNotesMode ? "इस फोटो के नोट्स बनाइए" : "इस फोटो का डायग्राम बनाकर समझाइए"),
+      content: userText || (isNotesMode ? "इस फोटो के नोट्स बनाइए" : "इस फोटो का सचित्र डायग्राम बनाकर समझाइए"),
       userImage: userImage,
     };
 
@@ -390,7 +374,7 @@ export default function Home() {
               VP AI Assistant
             </h1>
             <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>
-              ● ऑनलाइन (Visual Diagrams Active)
+              ● सचित्र विजुअल्स एक्टिव
             </span>
           </div>
         </div>
@@ -499,7 +483,7 @@ export default function Home() {
                       fontWeight: "600",
                     }}
                   >
-                    {copiedIdx === idx ? "✓ कॉपी हुआ" : "📋 कॉपी"}
+                    {copiedIdx === idx ? "✓ कॉपी" : "📋 कॉपी"}
                   </button>
                   <button
                     onClick={() => handleSpeak(msg.content, idx)}
@@ -534,7 +518,7 @@ export default function Home() {
               {msg.role === "user" ? (
                 <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
               ) : (
-                renderCleanContent(msg.content)
+                renderTextLines(msg.content)
               )}
             </div>
           </div>
@@ -561,7 +545,7 @@ export default function Home() {
               alt="Thinking"
               style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }}
             />
-            {isNotesMode ? "VP AI नोट्स और डायग्राम बना रहा है... 📝" : "VP AI डायग्राम और जवाब तैयार कर रहा है... 🎨"}
+            {isNotesMode ? "VP AI सचित्र नोट्स तैयार कर रहा है... 📝" : "VP AI चित्र बनाकर समझा रहा है... 🎨"}
           </div>
         )}
         <div ref={chatEndRef} />
@@ -674,13 +658,7 @@ export default function Home() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              selectedImage
-                ? "इस फोटो को डायग्राम के साथ समझाएं..."
-                : isNotesMode
-                ? "किस टॉपिक के नोट्स और डायग्राम चाहिए?"
-                : "हार्ट, किडनी या किसी भी प्रोसेस का डायग्राम बनवाएं..."
-            }
+            placeholder="हार्ट, आँख या किसी भी चीज़ का सचित्र डायग्राम बनवाएं..."
             style={{
               flex: 1,
               padding: "10px 16px",
