@@ -10,7 +10,7 @@ function formatBold(str) {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} style={{ color: "#0f172a", fontWeight: "600" }}>
+        <strong key={i} style={{ color: "#0f172a", fontWeight: "700" }}>
           {part.slice(2, -2)}
         </strong>
       );
@@ -42,7 +42,7 @@ function renderTextLines(text) {
       return (
         <h3
           key={index}
-          style={{ fontSize: "15px", fontWeight: "700", color: "#1e293b", margin: "10px 0 4px 0" }}
+          style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b", margin: "12px 0 6px 0" }}
         >
           {formatBold(heading)}
         </h3>
@@ -54,7 +54,7 @@ function renderTextLines(text) {
       return (
         <div
           key={index}
-          style={{ display: "flex", gap: "6px", marginLeft: "6px", marginBottom: "4px", lineHeight: "1.5" }}
+          style={{ display: "flex", gap: "8px", marginLeft: "6px", marginBottom: "5px", lineHeight: "1.6" }}
         >
           <span style={{ color: "#2563eb", fontWeight: "bold" }}>•</span>
           <span style={{ color: "#334155" }}>{formatBold(bullet)}</span>
@@ -66,7 +66,7 @@ function renderTextLines(text) {
       return (
         <div
           key={index}
-          style={{ marginLeft: "6px", marginBottom: "4px", lineHeight: "1.5", color: "#334155" }}
+          style={{ marginLeft: "6px", marginBottom: "5px", lineHeight: "1.6", color: "#334155" }}
         >
           {formatBold(cleanLine)}
         </div>
@@ -74,7 +74,7 @@ function renderTextLines(text) {
     }
 
     return (
-      <p key={index} style={{ margin: "4px 0", lineHeight: "1.5", color: "#334155" }}>
+      <p key={index} style={{ margin: "4px 0", lineHeight: "1.6", color: "#334155" }}>
         {formatBold(cleanLine)}
       </p>
     );
@@ -84,7 +84,6 @@ function renderTextLines(text) {
 function renderCleanContent(text) {
   if (!text) return null;
 
-  // डायग्राम या कोड ब्लॉक (``` से घिरा हुआ) को सही बॉक्स में दिखाना
   if (text.includes("```")) {
     const parts = text.split(/(```[\s\S]*?```)/g);
     return parts.map((part, i) => {
@@ -93,23 +92,34 @@ function renderCleanContent(text) {
           .replace(/^```[a-zA-Z]*\n?/, "")
           .replace(/```$/, "");
         return (
-          <pre
+          <div
             key={i}
             style={{
-              background: "#0f172a",
-              color: "#38bdf8",
-              padding: "12px",
-              borderRadius: "8px",
+              background: "#090d16",
+              border: "1px solid #1e293b",
+              borderRadius: "10px",
+              padding: "14px",
+              margin: "12px 0",
+              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.5)",
               overflowX: "auto",
-              fontFamily: "monospace",
-              fontSize: "13px",
-              lineHeight: "1.4",
-              margin: "10px 0",
-              whiteSpace: "pre-wrap",
             }}
           >
-            {cleanCode}
-          </pre>
+            <div style={{ fontSize: "11px", color: "#38bdf8", fontWeight: "700", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "1px" }}>
+              📊 Visual Diagram / Layout
+            </div>
+            <pre
+              style={{
+                color: "#f8fafc",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontSize: "13px",
+                lineHeight: "1.45",
+                margin: 0,
+                whiteSpace: "pre",
+              }}
+            >
+              {cleanCode}
+            </pre>
+          </div>
         );
       }
       return <div key={i}>{renderTextLines(part)}</div>;
@@ -127,7 +137,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के, लिख के, **फोटो अपलोड (📎)** करके सवाल पूछीं, ऊपर **'📝 नोट्स मोड'** ऑन करके नोट्स बनवाईं और **PDF** डाउनलोड करीं!",
+        "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nकौनों भी टॉपिक पर लिख के, बोल के या **फोटो 📎** भेज के पूछीं। हम ओकर **विजुअल डायग्राम बनाके** एकदम साफ़-साफ़ समझा देब!",
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -250,14 +260,14 @@ export default function Home() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>VP AI Study Notes</title>
+          <title>VP AI Study Notes & Diagram</title>
           <style>
             body { font-family: system-ui, -apple-system, sans-serif; padding: 24px; color: #1e293b; line-height: 1.6; }
             h1 { color: #2563eb; font-size: 20px; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; }
             h2 { color: #0f172a; font-size: 16px; margin-top: 16px; margin-bottom: 6px; }
             p { margin: 6px 0; font-size: 14px; }
             li { margin-left: 20px; margin-bottom: 4px; font-size: 14px; }
-            pre { background: #f1f5f9; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; }
+            pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; }
             .footer { margin-top: 30px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
           </style>
         </head>
@@ -287,7 +297,7 @@ export default function Home() {
 
     const newUserMsg = {
       role: "user",
-      content: userText || (isNotesMode ? "इस फोटो के नोट्स बनाइए" : "इस फोटो को समझाइए"),
+      content: userText || (isNotesMode ? "इस फोटो के नोट्स बनाइए" : "इस फोटो का डायग्राम बनाकर समझाइए"),
       userImage: userImage,
     };
 
@@ -360,12 +370,11 @@ export default function Home() {
               VP AI Assistant
             </h1>
             <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>
-              ● ऑनलाइन (Notes + Vision + PDF)
+              ● ऑनलाइन (Visual Diagrams Active)
             </span>
           </div>
         </div>
 
-        {/* नोट्स मोड टॉगल */}
         <button
           onClick={() => setIsNotesMode(!isNotesMode)}
           style={{
@@ -386,11 +395,11 @@ export default function Home() {
         </button>
       </header>
 
-      {/* चैट संदेश */}
+      {/* चैट विंडो */}
       <div
         style={{
           flex: 1,
-          maxWidth: "720px",
+          maxWidth: "760px",
           width: "100%",
           margin: "0 auto",
           padding: "16px",
@@ -404,7 +413,7 @@ export default function Home() {
             key={idx}
             style={{
               alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              maxWidth: "92%",
+              maxWidth: "94%",
               background: msg.role === "user" ? "#2563eb" : "#ffffff",
               color: msg.role === "user" ? "#ffffff" : "#1e293b",
               padding: "14px 16px",
@@ -533,7 +542,7 @@ export default function Home() {
               alt="Thinking"
               style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }}
             />
-            {isNotesMode ? "VP AI नोट्स तैयार कर रहा है... 📝" : "VP AI सोच रहा है... ✍️"}
+            {isNotesMode ? "VP AI नोट्स और डायग्राम बना रहा है... 📝" : "VP AI डायग्राम और जवाब तैयार कर रहा है... 🎨"}
           </div>
         )}
         <div ref={chatEndRef} />
@@ -543,7 +552,7 @@ export default function Home() {
       {selectedImage && (
         <div
           style={{
-            maxWidth: "720px",
+            maxWidth: "760px",
             width: "100%",
             margin: "0 auto",
             padding: "6px 16px",
@@ -577,7 +586,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* इनपुट बार */}
+      {/* इनपुट बॉक्स */}
       <div
         style={{
           position: "sticky",
@@ -589,7 +598,7 @@ export default function Home() {
       >
         <div
           style={{
-            maxWidth: "720px",
+            maxWidth: "760px",
             margin: "0 auto",
             display: "flex",
             alignItems: "center",
@@ -649,4 +658,43 @@ export default function Home() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              selected
+              selectedImage
+                ? "इस फोटो को डायग्राम के साथ समझाएं..."
+                : isNotesMode
+                ? "किस टॉपिक के नोट्स और डायग्राम चाहिए?"
+                : "हार्ट, किडनी या किसी भी प्रोसेस का डायग्राम बनवाएं..."
+            }
+            style={{
+              flex: 1,
+              padding: "10px 16px",
+              fontSize: "15px",
+              borderRadius: "24px",
+              border: "1.5px solid #cbd5e1",
+              outline: "none",
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+
+          <button
+            onClick={handleSend}
+            disabled={loading}
+            style={{
+              padding: "0 18px",
+              height: "40px",
+              fontSize: "14px",
+              fontWeight: "600",
+              borderRadius: "24px",
+              border: "none",
+              background: loading ? "#93c5fd" : "#2563eb",
+              color: "#ffffff",
+              cursor: loading ? "not-allowed" : "pointer",
+              flexShrink: 0,
+            }}
+          >
+            {isNotesMode ? "नोट्स बनाएँ" : "भेजें"}
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
