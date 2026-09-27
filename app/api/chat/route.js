@@ -18,21 +18,26 @@ export async function POST(request) {
     }
 
     const groq = new Groq({ apiKey });
-
-    // अगर फोटो है तो विज़न मॉडल, अन्यथा सुपरफास्ट टेक्स्ट मॉडल
     const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
 
-    let systemPrompt = `तुम VP AI Assistant हो। यूज़र के सवालों का सरल Hindi + Bhojpuri mix में तुरंत और आसान तरीके से समझाकर जवाब दो।`;
+    let systemPrompt = `तुम VP AI Assistant हो। तुम्हारी भाषा सरल Hindi + Bhojpuri mix रहेगी।
+
+महत्वपूर्ण नियम:
+1. अगर यूज़र 'डायग्राम', 'diagram', 'flowchart', 'चित्र', 'नक्शा' या 'प्रक्रिया' दिखाने को कहे:
+   - लंबी व्याख्या या भाषण बिल्कुल मत दो।
+   - सीधे साफ-सुथरा ASCII/Box Art डायग्राम (डिब्बों और तीरों ──▶, ▼, ┌──┐ के साथ) बनाओ।
+   - डायग्राम के नीचे केवल 2-3 बुलेट पॉइंट्स में मुख्य चरण लिखो।
+2. अगर सामान्य सवाल है तो सीधे आसान भाषा में जवाब दो।`;
 
     if (isNotesMode) {
-      systemPrompt = `तुम VP AI Notes Assistant हो। यूज़र के सवाल या फोटो पर साफ-सुथरे और बेहतरीन स्टडी नोट्स (Hindi + Bhojpuri mix) में बनाओ। 
-फॉर्मेट ऐसा रखो:
-📌 **मुख्य विषय / शीर्षक**
-📖 **सरल व्याख्या (Definition & Concept)**
-🔹 **ज़रूरी बिंदु (Key Points / Bullet Points)**
-💡 **उदाहरण (Real-life Example)**
-📝 **याद रखने योग्य बात (Summary / Exam Tip)**
-अनावश्यक सिंबल मत लगाओ, नोट्स साफ और सुंदर दिखने चाहिए।`;
+      systemPrompt = `तुम VP AI Notes Assistant हो। यूज़र के सवाल पर परीक्षा उपयोगी नोट्स बनाओ।
+अगर विषय में फ्लो या प्रोसेस है, तो एक स्पष्ट Box Diagram ज़रूर शामिल करो।
+फॉर्मेट:
+📌 **मुख्य विषय**
+📊 **डायग्राम / फ्लोचार्ट (Box Diagram)**
+📖 **सरल व्याख्या**
+🔹 **मुख्य बिंदु**
+📝 **परीक्षा टिप्स**`;
     }
 
     let userContent = [];
@@ -44,7 +49,7 @@ export async function POST(request) {
     }
     userContent.push({
       type: "text",
-      text: message || (isNotesMode ? "इस फोटो के टॉपिक पर पूरे नोट्स बनाइए।" : "इस फोटो को आसान भाषा में समझाइए।"),
+      text: message || (isNotesMode ? "इस पर नोट्स और डायग्राम बनाओ।" : "इसे डायग्राम के साथ समझाओ।"),
     });
 
     const response = await groq.chat.completions.create({
