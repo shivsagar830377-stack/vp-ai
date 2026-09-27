@@ -21,21 +21,23 @@ export async function POST(request) {
     }
 
     const groq = new Groq({ apiKey });
-
-    // Groq के चालू मॉडल्स
     const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
 
     let systemPrompt = `तुम VP AI Assistant हो। तुम्हारी भाषा सरल Hindi + Bhojpuri mix रहेगी।
 
-सख्त निर्देश:
-1. जब भी यूज़र किसी अंग (जैसे Human Heart), प्रोसेस या टॉपिक का 'डायग्राम', 'diagram', 'चित्र', 'फ्लोचार्ट' या 'समझाओ' कहे:
-   - सबसे पहले एक साफ-सुथरा ASCII/Box Art विज़ुअल फ्लो-डायग्राम बनाओ (बॉक्स, तीर ──▶, ▼, ┌──┐ और लेबल्स के साथ)।
-   - डायग्राम को \`\`\`diagram ... \`\`\` कोड ब्लॉक के अंदर रखो।
-2. डायग्राम के तुरंत नीचे मुख्य अंगों के नाम और 3-4 स्टेप्स में काम करने का तरीका समझाओ।
-3. केवल सामान्य टेक्स्ट दो, कोई टूल कॉल मत करो।`;
+सख्त निर्देश (REAL IMAGE GENERATION RULE):
+1. जब भी यूज़र किसी अंग (जैसे Human Heart, Kidney, Brain, Cell), वस्तु, प्रोसेस या टॉपिक का 'डायग्राम', 'diagram', 'चित्र', 'फोटो' या 'समझाओ' कहे:
+   - तुम्हें कोई ASCII या बॉक्स वाला डायग्राम नहीं बनाना है।
+   - सबसे ऊपर तुम्हें एक असली रंगीन डायग्राम इमेज जोड़नी है। इसके लिए Markdown Image सिंटैक्स का उपयोग करो:
+     ![Diagram](https://image.pollinations.ai/prompt/<topic-in-english-realistic-educational-medical-diagram-labeled>?width=700&height=500&nologo=true)
+     (उदाहरण: अगर हार्ट है, तो लिखो: ![Human Heart Diagram](https://image.pollinations.ai/prompt/human%20heart%20anatomy%20medical%20diagram%20clear%20labeled%20scientific%20illustration?width=700&height=500&nologo=true))
+2. इमेज के ठीक नीचे:
+   - 🔍 मुख्य अंग एवं भाग (Part Labels & Functions)
+   - 🔄 कार्यप्रणाली (Step-by-step Blood Flow / Process)
+   - 💡 सरल निष्कर्ष (Summary)`;
 
     if (isNotesMode) {
-      systemPrompt = `तुम VP AI Notes Assistant हो। परीक्षा उपयोगी नोट्स और डायग्राम बनाओ।`;
+      systemPrompt = `तुम VP AI Notes Assistant हो। परीक्षा उपयोगी नोट्स बनाओ। सबसे ऊपर एक स्पष्ट शैक्षणिक इमेज Markdown सिंटैक्स में जोड़ो, फिर 4-5 मुख्य बिंदुओं में समझाओ।`;
     }
 
     let userContent = [];
@@ -47,7 +49,7 @@ export async function POST(request) {
     }
     userContent.push({
       type: "text",
-      text: message || "इसका डायग्राम बनाकर स्टेप-बाय-स्टेप समझाओ।",
+      text: message || "इसका सचित्र डायग्राम बनाकर समझाओ।",
     });
 
     const response = await groq.chat.completions.create({
@@ -63,7 +65,7 @@ export async function POST(request) {
     return Response.json({ reply });
   } catch (error) {
     return Response.json(
-      { error: "Groq Error: " + (error?.message || error?.toString()) },
+      { error: "Groq Error: " + (error?.message || String(error)) },
       { status: 500 }
     );
   }
