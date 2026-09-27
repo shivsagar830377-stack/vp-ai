@@ -6,7 +6,7 @@ export async function POST(request) {
 
     if (!apiKey) {
       return Response.json(
-        { error: "GROQ_API_KEY Vercel में नहीं मिली!" },
+        { error: "GROQ_API_KEY Vercel me nahi mili!" },
         { status: 500 }
       );
     }
@@ -14,41 +14,27 @@ export async function POST(request) {
     const { message, image } = await request.json();
 
     if (!message && !image) {
-      return Response.json({ error: "मैसेज या फोटो खाली है!" }, { status: 400 });
+      return Response.json({ error: "Message ya photo khali hai!" }, { status: 400 });
     }
 
     const groq = new Groq({ apiKey });
 
-    // Groq का सक्रिय मॉडल
-    const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
-
-    let userContent = [];
-    if (image) {
-      userContent.push({
-        type: "image_url",
-        image_url: { url: image },
-      });
-    }
-    userContent.push({
-      type: "text",
-      text: message || "इस फोटो को देखकर आसान हिंदी और भोजपुरी में समझाइए।",
-    });
-
+    // Groq ka active & fastest model
     const response = await groq.chat.completions.create({
-      model: modelToUse,
+      model: "openai/gpt-oss-20b",
       messages: [
         {
           role: "system",
-          content: `तुम VP AI हो। यूज़र के सवालों का जवाब आसान, साफ और आकर्षक भाषा (Hindi + Bhojpuri mix) में दो। अगर फोटो भेजी गई है, तो फोटो में दिख रही चीज़ या सवाल को बहुत अच्छे से समझकर टीचर की तरह समझाओ। जवाब हमेशा पॉइंट्स में और साफ लिखो।`,
+          content: "Tum VP AI ho. User ke sawalo ka jawab aasan, clean Hindi + Bhojpuri mix me step-by-step teacher style me do. Koi raw asterisk ya hash symbol mat failao.",
         },
         {
           role: "user",
-          content: userContent,
+          content: message || "Is sawal ko aasan bhasha me samjha dijiye.",
         },
       ],
     });
 
-    const reply = response.choices?.[0]?.message?.content || "कोई जवाब नहीं मिला।";
+    const reply = response.choices?.[0]?.message?.content || "Koi jawab nahi mila.";
     return Response.json({ reply });
   } catch (error) {
     return Response.json(
