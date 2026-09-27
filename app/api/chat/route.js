@@ -19,7 +19,7 @@ export async function POST(request) {
 
     const groq = new Groq({ apiKey });
 
-    // Groq पर 100% एक्टिव और फ्री वर्किंग मॉडल्स
+    // Groq के एक्टिव और फ्री मॉडल्स
     const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
 
     let systemPrompt = `तुम VP AI Assistant हो। तुम्हारी भाषा सरल Hindi + Bhojpuri mix रहेगी।
