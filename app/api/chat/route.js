@@ -19,7 +19,7 @@ export async function POST(request) {
 
     const groq = new Groq({ apiKey });
 
-    // Groq पर एक्टिव वर्किंग मॉडल्स
+    // Groq पर 100% एक्टिव मॉडल
     const modelToUse = image ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b";
 
     let systemPrompt = `तुम VP AI Assistant हो। तुम्हारी भाषा सरल Hindi + Bhojpuri mix रहेगी।
@@ -32,7 +32,7 @@ export async function POST(request) {
    - 🔍 मुख्य अंग / भाग (Labels Explanation)
    - 🔄 स्टेप-बाय-स्टेप काम करने का तरीका (Step-by-Step Flow)
    - 💡 सरल निष्कर्ष (Summary / Exam Tip)
-3. केवल सादा टेक्स्ट दो। कोई टूल या फंक्शन मत चलाओ।`;
+3. केवल सादा टेक्स्ट दो। कोई टूल कॉल मत करो।`;
 
     if (isNotesMode) {
       systemPrompt = `तुम VP AI Notes Assistant हो। परीक्षा उपयोगी नोट्स बनाओ।
