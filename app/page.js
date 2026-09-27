@@ -28,7 +28,6 @@ function renderTextLines(text) {
       return <div key={index} style={{ height: "6px" }} />;
     }
 
-    // Markdown Image Render: ![alt](url)
     const imgMatch = cleanLine.match(/!\[(.*?)\]\((https?:\/\/.*?)\)/);
     if (imgMatch) {
       return (
@@ -124,14 +123,20 @@ export default function Home() {
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
-  const audioPlayerRef = useRef(null);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // ResponsiveVoice लाइब्रेरी लोड करना (Android WebView के लिए सबसे विश्वसनीय)
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const script = document.createElement("script");
+      script.src = "https://code.responsivevoice.org/responsivevoice.js?key=FREE_KEY";
+      script.async = true;
+      document.body.appendChild(script);
+
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -183,13 +188,17 @@ export default function Home() {
     reader.readAsDataURL(file);
   }
 
+  // 100% सुरक्षित और एरर-मुक्त आवाज़ प्लेबैक
   function handleSpeak(text, idx) {
     if (speakingIdx === idx) {
+      if (typeof window !== "undefined" && window.responsiveVoice) {
+        window.responsiveVoice.cancel();
+      }
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
       }
       setSpeakingIdx(null);
       return;
@@ -199,37 +208,36 @@ export default function Home() {
       .replace(/!\[.*?\]\(.*?\)/g, "")
       .replace(/[*#_~`]/g, "")
       .replace(/\[.*?\]/g, "")
-      .slice(0, 200);
+      .slice(0, 180);
 
+    // 1. पहला तरीका: ResponsiveVoice (मोबाइल WebView और APK के लिए सबसे बेस्ट)
+    if (typeof window !== "undefined" && window.responsiveVoice) {
+      setSpeakingIdx(idx);
+      window.responsiveVoice.speak(cleanText, "Hindi Female", {
+        rate: 0.95,
+        onend: () => setSpeakingIdx(null),
+        onerror: () => setSpeakingIdx(null),
+      });
+      return;
+    }
+
+    // 2. दूसरा तरीका: इनबिल्ट speechSynthesis
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = "hi-IN";
-        utterance.rate = 0.95;
         utterance.onend = () => setSpeakingIdx(null);
         utterance.onerror = () => setSpeakingIdx(null);
         setSpeakingIdx(idx);
         window.speechSynthesis.speak(utterance);
         return;
       } catch (e) {
-        // Fallback
+        setSpeakingIdx(null);
       }
     }
 
-    try {
-      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=hi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
-      if (!audioPlayerRef.current) {
-        audioPlayerRef.current = new Audio();
-      }
-      audioPlayerRef.current.src = audioUrl;
-      audioPlayerRef.current.onended = () => setSpeakingIdx(null);
-      audioPlayerRef.current.onerror = () => setSpeakingIdx(null);
-      setSpeakingIdx(idx);
-      audioPlayerRef.current.play();
-    } catch (err) {
-      setSpeakingIdx(null);
-    }
+    setSpeakingIdx(null);
   }
 
   function handleCopy(text, idx) {
