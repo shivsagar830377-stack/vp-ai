@@ -4,26 +4,46 @@ import { useState, useRef, useEffect } from "react";
 
 const BOT_AVATAR = "https://i.postimg.cc/C5pbh5zN/file-00000000583082118b16369073f60da3.png";
 
-function renderCleanContent(text) {
-  if (!text) return null;
+function formatBold(str) {
+  if (!str) return "";
+  const parts = str.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} style={{ color: "#0f172a", fontWeight: "600" }}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
 
+function renderTextLines(text) {
   const lines = text.split("\n");
-
   return lines.map((line, index) => {
     let cleanLine = line.trim();
 
     if (!cleanLine) {
-      return <div key={index} style={{ height: "8px" }} />;
+      return <div key={index} style={{ height: "6px" }} />;
     }
 
     if (cleanLine === "---" || cleanLine === "***") {
-      return <hr key={index} style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "14px 0" }} />;
+      return (
+        <hr
+          key={index}
+          style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "12px 0" }}
+        />
+      );
     }
 
     if (cleanLine.startsWith("#")) {
       const heading = cleanLine.replace(/^#+\s*/, "");
       return (
-        <h3 key={index} style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b", margin: "12px 0 6px 0" }}>
+        <h3
+          key={index}
+          style={{ fontSize: "15px", fontWeight: "700", color: "#1e293b", margin: "10px 0 4px 0" }}
+        >
           {formatBold(heading)}
         </h3>
       );
@@ -32,7 +52,10 @@ function renderCleanContent(text) {
     if (cleanLine.startsWith("- ") || cleanLine.startsWith("* ") || cleanLine.startsWith("• ")) {
       const bullet = cleanLine.replace(/^[-*•]\s*/, "");
       return (
-        <div key={index} style={{ display: "flex", gap: "8px", marginLeft: "8px", marginBottom: "6px", lineHeight: "1.6" }}>
+        <div
+          key={index}
+          style={{ display: "flex", gap: "6px", marginLeft: "6px", marginBottom: "4px", lineHeight: "1.5" }}
+        >
           <span style={{ color: "#2563eb", fontWeight: "bold" }}>•</span>
           <span style={{ color: "#334155" }}>{formatBold(bullet)}</span>
         </div>
@@ -41,29 +64,59 @@ function renderCleanContent(text) {
 
     if (/^\d+\.\s/.test(cleanLine)) {
       return (
-        <div key={index} style={{ marginLeft: "8px", marginBottom: "6px", lineHeight: "1.6", color: "#334155" }}>
+        <div
+          key={index}
+          style={{ marginLeft: "6px", marginBottom: "4px", lineHeight: "1.5", color: "#334155" }}
+        >
           {formatBold(cleanLine)}
         </div>
       );
     }
 
     return (
-      <p key={index} style={{ margin: "4px 0", lineHeight: "1.6", color: "#334155" }}>
+      <p key={index} style={{ margin: "4px 0", lineHeight: "1.5", color: "#334155" }}>
         {formatBold(cleanLine)}
       </p>
     );
   });
 }
 
-function formatBold(str) {
-  if (!str) return "";
-  const parts = str.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} style={{ color: "#0f172a", fontWeight: "600" }}>{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
+function renderCleanContent(text) {
+  if (!text) return null;
+
+  // डायग्राम या कोड ब्लॉक (``` से घिरा हुआ) को सही बॉक्स में दिखाना
+  if (text.includes("```")) {
+    const parts = text.split(/(```[\s\S]*?```)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("```")) {
+        const cleanCode = part
+          .replace(/^```[a-zA-Z]*\n?/, "")
+          .replace(/```$/, "");
+        return (
+          <pre
+            key={i}
+            style={{
+              background: "#0f172a",
+              color: "#38bdf8",
+              padding: "12px",
+              borderRadius: "8px",
+              overflowX: "auto",
+              fontFamily: "monospace",
+              fontSize: "13px",
+              lineHeight: "1.4",
+              margin: "10px 0",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {cleanCode}
+          </pre>
+        );
+      }
+      return <div key={i}>{renderTextLines(part)}</div>;
+    });
+  }
+
+  return renderTextLines(text);
 }
 
 export default function Home() {
@@ -73,7 +126,8 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के, लिख के, **फोटो अपलोड (📎)** करके सवाल पूछीं, या ऊपर **'📝 नोट्स मोड'** ऑन करके किसी भी टॉपिक के नोट्स बनवा लीं और **PDF** डाउनलोड करीं!",
+      content:
+        "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nबोल के, लिख के, **फोटो अपलोड (📎)** करके सवाल पूछीं, ऊपर **'📝 नोट्स मोड'** ऑन करके नोट्स बनवाईं और **PDF** डाउनलोड करीं!",
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +144,8 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
@@ -171,7 +226,6 @@ export default function Home() {
     setTimeout(() => setCopiedIdx(null), 2000);
   }
 
-  // PDF डाउनलोड करने का फ़ंक्शन
   function handleDownloadPDF(text) {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
@@ -185,7 +239,8 @@ export default function Home() {
         let l = line.trim();
         if (!l) return "<br/>";
         if (l.startsWith("#")) return `<h2>${l.replace(/^#+\s*/, "")}</h2>`;
-        if (l.startsWith("- ") || l.startsWith("* ")) return `<li>${l.replace(/^[-*]\s*/, "")}</li>`;
+        if (l.startsWith("- ") || l.startsWith("* "))
+          return `<li>${l.replace(/^[-*]\s*/, "")}</li>`;
         return `<p>${l}</p>`;
       })
       .join("")
@@ -197,16 +252,17 @@ export default function Home() {
         <head>
           <title>VP AI Study Notes</title>
           <style>
-            body { font-family: system-ui, -apple-system, sans-serif; padding: 30px; color: #1e293b; line-height: 1.6; }
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 24px; color: #1e293b; line-height: 1.6; }
             h1 { color: #2563eb; font-size: 20px; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; }
-            h2 { color: #0f172a; font-size: 16px; margin-top: 18px; margin-bottom: 8px; }
+            h2 { color: #0f172a; font-size: 16px; margin-top: 16px; margin-bottom: 6px; }
             p { margin: 6px 0; font-size: 14px; }
             li { margin-left: 20px; margin-bottom: 4px; font-size: 14px; }
-            .footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
+            pre { background: #f1f5f9; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; }
+            .footer { margin-top: 30px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
           </style>
         </head>
         <body>
-          <h1>VP AI Assistant - Study Notes 📝</h1>
+          <h1>VP AI Assistant - Notes & Diagram 📝</h1>
           <div>${formattedContent}</div>
           <div class="footer">Generated by VP AI Assistant</div>
         </body>
@@ -250,7 +306,10 @@ export default function Home() {
       if (data.reply) {
         setMessages([...updatedHistory, { role: "assistant", content: data.reply }]);
       } else {
-        setMessages([...updatedHistory, { role: "assistant", content: data.error || "कोई जवाब नहीं मिला।" }]);
+        setMessages([
+          ...updatedHistory,
+          { role: "assistant", content: data.error || "कोई जवाब नहीं मिला।" },
+        ]);
       }
     } catch (err) {
       setMessages([...updatedHistory, { role: "assistant", content: "कनेक्शन में समस्या हुई।" }]);
@@ -260,22 +319,53 @@ export default function Home() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <main
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
+    >
       {/* हेडर */}
-      <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
+      <header
+        style={{
+          background: "#ffffff",
+          borderBottom: "1px solid #e2e8f0",
+          padding: "10px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
             src={BOT_AVATAR}
             alt="VP AI Avatar"
-            style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#eff6ff", border: "2px solid #2563eb", objectFit: "cover" }}
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "50%",
+              background: "#eff6ff",
+              border: "2px solid #2563eb",
+              objectFit: "cover",
+            }}
           />
           <div>
-            <h1 style={{ fontSize: "15px", fontWeight: "700", margin: 0, color: "#0f172a" }}>VP AI Assistant</h1>
-            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>● ऑनलाइन (Notes + Vision + PDF)</span>
+            <h1 style={{ fontSize: "15px", fontWeight: "700", margin: 0, color: "#0f172a" }}>
+              VP AI Assistant
+            </h1>
+            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600" }}>
+              ● ऑनलाइन (Notes + Vision + PDF)
+            </span>
           </div>
         </div>
 
-        {/* नोट्स मोड टॉगल बटन */}
+        {/* नोट्स मोड टॉगल */}
         <button
           onClick={() => setIsNotesMode(!isNotesMode)}
           style={{
@@ -296,8 +386,19 @@ export default function Home() {
         </button>
       </header>
 
-      {/* चैट मैसेजेस */}
-      <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      {/* चैट संदेश */}
+      <div
+        style={{
+          flex: 1,
+          maxWidth: "720px",
+          width: "100%",
+          margin: "0 auto",
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
+      >
         {messages.map((msg, idx) => (
           <div
             key={idx}
@@ -307,39 +408,83 @@ export default function Home() {
               background: msg.role === "user" ? "#2563eb" : "#ffffff",
               color: msg.role === "user" ? "#ffffff" : "#1e293b",
               padding: "14px 16px",
-              borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              borderRadius:
+                msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
               border: msg.role === "assistant" ? "1px solid #e2e8f0" : "none",
             }}
           >
             {msg.role === "assistant" && (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "8px",
+                  borderBottom: "1px solid #f1f5f9",
+                  paddingBottom: "6px",
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <img
                     src={BOT_AVATAR}
                     alt="VP AI"
-                    style={{ width: "22px", height: "22px", borderRadius: "50%", background: "#eff6ff", objectFit: "cover" }}
+                    style={{
+                      width: "22px",
+                      height: "22px",
+                      borderRadius: "50%",
+                      background: "#eff6ff",
+                      objectFit: "cover",
+                    }}
                   />
-                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569" }}>VP AI</span>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569" }}>
+                    VP AI
+                  </span>
                 </div>
                 <div style={{ display: "flex", gap: "6px" }}>
-                  {/* PDF डाउनलोड बटन */}
                   <button
                     onClick={() => handleDownloadPDF(msg.content)}
                     title="PDF डाउनलोड करें"
-                    style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: "#2563eb", fontWeight: "600" }}
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "6px",
+                      padding: "3px 8px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      color: "#2563eb",
+                      fontWeight: "600",
+                    }}
                   >
                     📄 PDF
                   </button>
                   <button
                     onClick={() => handleCopy(msg.content, idx)}
-                    style={{ background: copiedIdx === idx ? "#dcfce7" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: copiedIdx === idx ? "#16a34a" : "#475569", fontWeight: "600" }}
+                    style={{
+                      background: copiedIdx === idx ? "#dcfce7" : "#f1f5f9",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "3px 8px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      color: copiedIdx === idx ? "#16a34a" : "#475569",
+                      fontWeight: "600",
+                    }}
                   >
                     {copiedIdx === idx ? "✓ कॉपी हुआ" : "📋 कॉपी"}
                   </button>
                   <button
                     onClick={() => handleSpeak(msg.content, idx)}
-                    style={{ background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "12px", cursor: "pointer", color: speakingIdx === idx ? "#dc2626" : "#475569", fontWeight: "600" }}
+                    style={{
+                      background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "3px 8px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      color: speakingIdx === idx ? "#dc2626" : "#475569",
+                      fontWeight: "600",
+                    }}
                   >
                     {speakingIdx === idx ? "⏹️ रोकें" : "🔊 सुनें"}
                   </button>
@@ -347,10 +492,13 @@ export default function Home() {
               </div>
             )}
 
-            {/* यूज़र की अपलोड की गई फ़ोटो */}
             {msg.userImage && (
               <div style={{ marginBottom: "8px" }}>
-                <img src={msg.userImage} alt="Uploaded" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }} />
+                <img
+                  src={msg.userImage}
+                  alt="Uploaded"
+                  style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }}
+                />
               </div>
             )}
 
@@ -365,8 +513,26 @@ export default function Home() {
         ))}
 
         {loading && (
-          <div style={{ alignSelf: "flex-start", background: "#ffffff", padding: "12px 18px", borderRadius: "16px 16px 16px 4px", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "14px", fontStyle: "italic", display: "flex", alignItems: "center", gap: "8px" }}>
-            <img src={BOT_AVATAR} alt="Thinking" style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }} />
+          <div
+            style={{
+              alignSelf: "flex-start",
+              background: "#ffffff",
+              padding: "12px 18px",
+              borderRadius: "16px 16px 16px 4px",
+              border: "1px solid #e2e8f0",
+              color: "#64748b",
+              fontSize: "14px",
+              fontStyle: "italic",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <img
+              src={BOT_AVATAR}
+              alt="Thinking"
+              style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }}
+            />
             {isNotesMode ? "VP AI नोट्स तैयार कर रहा है... 📝" : "VP AI सोच रहा है... ✍️"}
           </div>
         )}
@@ -375,16 +541,61 @@ export default function Home() {
 
       {/* इमेज प्रीव्यू */}
       {selectedImage && (
-        <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", padding: "6px 16px", display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
-          <img src={selectedImage} alt="Preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
-          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>फोटो सेलेक्ट हो गई है</span>
-          <button onClick={() => setSelectedImage(null)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: "16px", cursor: "pointer" }}>✕</button>
+        <div
+          style={{
+            maxWidth: "720px",
+            width: "100%",
+            margin: "0 auto",
+            padding: "6px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            background: "#f1f5f9",
+            borderTop: "1px solid #e2e8f0",
+          }}
+        >
+          <img
+            src={selectedImage}
+            alt="Preview"
+            style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }}
+          />
+          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>
+            फोटो सेलेक्ट हो गई है
+          </span>
+          <button
+            onClick={() => setSelectedImage(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#ef4444",
+              fontSize: "16px",
+              cursor: "pointer",
+            }}
+          >
+            ✕
+          </button>
         </div>
       )}
 
       {/* इनपुट बार */}
-      <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "10px 14px" }}>
-        <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
+      <div
+        style={{
+          position: "sticky",
+          bottom: 0,
+          background: "#ffffff",
+          borderTop: "1px solid #e2e8f0",
+          padding: "10px 14px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "720px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
           <input
             type="file"
             ref={fileInputRef}
@@ -396,7 +607,19 @@ export default function Home() {
           <button
             onClick={() => fileInputRef.current?.click()}
             title="फोटो जोड़ें"
-            style={{ width: "40px", height: "40px", borderRadius: "50%", border: "1.5px solid #cbd5e1", background: "#f8fafc", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: "1.5px solid #cbd5e1",
+              background: "#f8fafc",
+              fontSize: "18px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
           >
             📎
           </button>
@@ -404,7 +627,19 @@ export default function Home() {
           <button
             onClick={toggleListening}
             title="बोलकर लिखें"
-            style={{ width: "40px", height: "40px", borderRadius: "50%", border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1", background: isListening ? "#fee2e2" : "#f8fafc", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
+              background: isListening ? "#fee2e2" : "#f8fafc",
+              fontSize: "18px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
           >
             {isListening ? "🔴" : "🎙️"}
           </button>
@@ -413,20 +648,5 @@ export default function Home() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={selectedImage ? "इस फोटो के बारे में क्या पूछना है?" : (isNotesMode ? "किस टॉपिक पर नोट्स बनाना है?" : "सवाल पूछें या फोटो जोड़ें...")}
-            style={{ flex: 1, padding: "10px 16px", fontSize: "15px", borderRadius: "24px", border: "1.5px solid #cbd5e1", outline: "none" }}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          />
-
-          <button
-            onClick={handleSend}
-            disabled={loading}
-            style={{ padding: "0 18px", height: "40px", fontSize: "14px", fontWeight: "600", borderRadius: "24px", border: "none", background: loading ? "#93c5fd" : "#2563eb", color: "#ffffff", cursor: loading ? "not-allowed" : "pointer", flexShrink: 0 }}
-          >
-            {isNotesMode ? "नोट्स बनाएँ" : "भेजें"}
-          </button>
-        </div>
-      </div>
-    </main>
-  );
-}
+            placeholder={
+              selected
