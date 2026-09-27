@@ -147,6 +147,7 @@ export default function Home() {
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const audioPlayerRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -205,29 +206,52 @@ export default function Home() {
     reader.readAsDataURL(file);
   }
 
+  // सुरक्षित ऑडियो प्लेबैक (WebView और Chrome दोनों के लिए)
   function handleSpeak(text, idx) {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      alert("ब्राउज़र में आवाज़ सपोर्ट नहीं है।");
-      return;
-    }
-
     if (speakingIdx === idx) {
-      window.speechSynthesis.cancel();
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
       setSpeakingIdx(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[*#_~`]/g, "");
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "hi-IN";
-    utterance.rate = 0.95;
+    const cleanText = text.replace(/[*#_~`]/g, "").replace(/\[.*?\]/g, "").slice(0, 200);
 
-    utterance.onend = () => setSpeakingIdx(null);
-    utterance.onerror = () => setSpeakingIdx(null);
+    // अगर वेब स्पीच सिंथेसिस उपलब्ध है
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = "hi-IN";
+        utterance.rate = 0.95;
+        utterance.onend = () => setSpeakingIdx(null);
+        utterance.onerror = () => setSpeakingIdx(null);
+        setSpeakingIdx(idx);
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch (e) {
+        // Fallback to online audio
+      }
+    }
 
-    setSpeakingIdx(idx);
-    window.speechSynthesis.speak(utterance);
+    // अगर WebView में speech synthesis ब्लॉक है तो ऑनलाइन ऑडियो
+    try {
+      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=hi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+      if (!audioPlayerRef.current) {
+        audioPlayerRef.current = new Audio();
+      }
+      audioPlayerRef.current.src = audioUrl;
+      audioPlayerRef.current.onended = () => setSpeakingIdx(null);
+      audioPlayerRef.current.onerror = () => setSpeakingIdx(null);
+      setSpeakingIdx(idx);
+      audioPlayerRef.current.play();
+    } catch (err) {
+      setSpeakingIdx(null);
+    }
   }
 
   function handleCopy(text, idx) {
@@ -239,7 +263,7 @@ export default function Home() {
   function handleDownloadPDF(text) {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("पॉप-अप ब्लॉक है! कृपया ब्राउज़र में पॉप-अप अनुमति दें।");
+      alert("पॉप-अप ब्लॉक है! कृपया ब्राउज़र में अनुमति दें।");
       return;
     }
 
@@ -468,233 +492,4 @@ export default function Home() {
                     📄 PDF
                   </button>
                   <button
-                    onClick={() => handleCopy(msg.content, idx)}
-                    style={{
-                      background: copiedIdx === idx ? "#dcfce7" : "#f1f5f9",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "3px 8px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      color: copiedIdx === idx ? "#16a34a" : "#475569",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {copiedIdx === idx ? "✓ कॉपी हुआ" : "📋 कॉपी"}
-                  </button>
-                  <button
-                    onClick={() => handleSpeak(msg.content, idx)}
-                    style={{
-                      background: speakingIdx === idx ? "#fee2e2" : "#f1f5f9",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "3px 8px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      color: speakingIdx === idx ? "#dc2626" : "#475569",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {speakingIdx === idx ? "⏹️ रोकें" : "🔊 सुनें"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {msg.userImage && (
-              <div style={{ marginBottom: "8px" }}>
-                <img
-                  src={msg.userImage}
-                  alt="Uploaded"
-                  style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }}
-                />
-              </div>
-            )}
-
-            <div>
-              {msg.role === "user" ? (
-                <span style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{msg.content}</span>
-              ) : (
-                renderCleanContent(msg.content)
-              )}
-            </div>
-          </div>
-        ))}
-
-        {loading && (
-          <div
-            style={{
-              alignSelf: "flex-start",
-              background: "#ffffff",
-              padding: "12px 18px",
-              borderRadius: "16px 16px 16px 4px",
-              border: "1px solid #e2e8f0",
-              color: "#64748b",
-              fontSize: "14px",
-              fontStyle: "italic",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <img
-              src={BOT_AVATAR}
-              alt="Thinking"
-              style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }}
-            />
-            {isNotesMode ? "VP AI नोट्स और डायग्राम बना रहा है... 📝" : "VP AI डायग्राम और जवाब तैयार कर रहा है... 🎨"}
-          </div>
-        )}
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* इमेज प्रीव्यू */}
-      {selectedImage && (
-        <div
-          style={{
-            maxWidth: "760px",
-            width: "100%",
-            margin: "0 auto",
-            padding: "6px 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            background: "#f1f5f9",
-            borderTop: "1px solid #e2e8f0",
-          }}
-        >
-          <img
-            src={selectedImage}
-            alt="Preview"
-            style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }}
-          />
-          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>
-            फोटो सेलेक्ट हो गई है
-          </span>
-          <button
-            onClick={() => setSelectedImage(null)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#ef4444",
-              fontSize: "16px",
-              cursor: "pointer",
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* इनपुट बॉक्स */}
-      <div
-        style={{
-          position: "sticky",
-          bottom: 0,
-          background: "#ffffff",
-          borderTop: "1px solid #e2e8f0",
-          padding: "10px 14px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "760px",
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageSelect}
-            accept="image/*"
-            style={{ display: "none" }}
-          />
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            title="फोटो जोड़ें"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              border: "1.5px solid #cbd5e1",
-              background: "#f8fafc",
-              fontSize: "18px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            📎
-          </button>
-
-          <button
-            onClick={toggleListening}
-            title="बोलकर लिखें"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
-              background: isListening ? "#fee2e2" : "#f8fafc",
-              fontSize: "18px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            {isListening ? "🔴" : "🎙️"}
-          </button>
-
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              selectedImage
-                ? "इस फोटो को डायग्राम के साथ समझाएं..."
-                : isNotesMode
-                ? "किस टॉपिक के नोट्स और डायग्राम चाहिए?"
-                : "हार्ट, किडनी या किसी भी प्रोसेस का डायग्राम बनवाएं..."
-            }
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              fontSize: "15px",
-              borderRadius: "24px",
-              border: "1.5px solid #cbd5e1",
-              outline: "none",
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          />
-
-          <button
-            onClick={handleSend}
-            disabled={loading}
-            style={{
-              padding: "0 18px",
-              height: "40px",
-              fontSize: "14px",
-              fontWeight: "600",
-              borderRadius: "24px",
-              border: "none",
-              background: loading ? "#93c5fd" : "#2563eb",
-              color: "#ffffff",
-              cursor: loading ? "not-allowed" : "pointer",
-              flexShrink: 0,
-            }}
-          >
-            {isNotesMode ? "नोट्स बनाएँ" : "भेजें"}
-          </button>
-        </div>
-      </div>
-    </main>
-  );
-}
+                    onClick={() => handleCopy(
