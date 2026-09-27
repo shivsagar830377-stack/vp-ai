@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 
-https://ibb.co/8g6q6t25
+// आपकी प्रोफ़ाइल फ़ोटो का लिंक
+const BOT_AVATAR = "https://i.postimg.cc/C5pbh5zN/file-00000000583082118b16369073f60da3.png";
 
 function renderCleanContent(text) {
   if (!text) return null;
@@ -56,6 +57,7 @@ function renderCleanContent(text) {
 }
 
 function formatBold(str) {
+  if (!str) return "";
   if (str.startsWith("|") && str.endsWith("|")) {
     str = str.replace(/\|/g, " ").replace(/-+/g, "").trim();
   }
@@ -209,6 +211,7 @@ export default function Home() {
 
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      {/* हेडर */}
       <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <img
@@ -223,6 +226,7 @@ export default function Home() {
         </div>
       </header>
 
+      {/* चैट संदेश */}
       <div style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {messages.map((msg, idx) => (
           <div
@@ -244,7 +248,7 @@ export default function Home() {
                   <img
                     src={BOT_AVATAR}
                     alt="VP AI"
-                    style={{ width: "22px", height: "22px", borderRadius: "50%", background: "#eff6ff" }}
+                    style={{ width: "22px", height: "22px", borderRadius: "50%", background: "#eff6ff", objectFit: "cover" }}
                   />
                   <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569" }}>VP AI</span>
                 </div>
@@ -275,13 +279,14 @@ export default function Home() {
 
         {loading && (
           <div style={{ alignSelf: "flex-start", background: "#ffffff", padding: "12px 18px", borderRadius: "16px 16px 16px 4px", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "14px", fontStyle: "italic", display: "flex", alignItems: "center", gap: "8px" }}>
-            <img src={BOT_AVATAR} alt="Thinking" style={{ width: "20px", height: "20px", borderRadius: "50%" }} />
+            <img src={BOT_AVATAR} alt="Thinking" style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }} />
             VP AI सोच रहा है... ✍️
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
+      {/* इमेज प्रीव्यू */}
       {selectedImage && (
         <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", padding: "6px 16px", display: "flex", alignItems: "center", gap: "10px", background: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
           <img src={selectedImage} alt="Preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
@@ -290,6 +295,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* इनपुट बॉक्स */}
       <div style={{ position: "sticky", bottom: 0, background: "#ffffff", borderTop: "1px solid #e2e8f0", padding: "10px 14px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px" }}>
           <input
