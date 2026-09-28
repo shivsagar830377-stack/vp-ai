@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 
 const BOT_AVATAR = "https://i.postimg.cc/C5pbh5zN/file-00000000583082118b16369073f60da3.png";
+const SPLASH_IMAGE = "https://i.postimg.cc/SNw05d0B/28988.jpg";
 
 function formatBold(str) {
   if (!str) return "";
@@ -106,6 +107,7 @@ function renderTextLines(text) {
 }
 
 export default function Home() {
+  const [showSplash, setShowSplash] = useState(true);
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isNotesMode, setIsNotesMode] = useState(false);
@@ -125,11 +127,18 @@ export default function Home() {
   const recognitionRef = useRef(null);
   const audioRef = useRef(null);
 
+  // Splash Screen Timer (2.5 seconds)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // ResponsiveVoice लाइब्रेरी लोड करना (Android WebView के लिए सबसे विश्वसनीय)
   useEffect(() => {
     if (typeof window !== "undefined") {
       const script = document.createElement("script");
@@ -188,7 +197,6 @@ export default function Home() {
     reader.readAsDataURL(file);
   }
 
-  // 100% सुरक्षित और एरर-मुक्त आवाज़ प्लेबैक
   function handleSpeak(text, idx) {
     if (speakingIdx === idx) {
       if (typeof window !== "undefined" && window.responsiveVoice) {
@@ -210,7 +218,6 @@ export default function Home() {
       .replace(/\[.*?\]/g, "")
       .slice(0, 180);
 
-    // 1. पहला तरीका: ResponsiveVoice (मोबाइल WebView और APK के लिए सबसे बेस्ट)
     if (typeof window !== "undefined" && window.responsiveVoice) {
       setSpeakingIdx(idx);
       window.responsiveVoice.speak(cleanText, "Hindi Female", {
@@ -221,7 +228,6 @@ export default function Home() {
       return;
     }
 
-    // 2. दूसरा तरीका: इनबिल्ट speechSynthesis
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
@@ -339,6 +345,44 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Splash Screen Render
+  if (showSplash) {
+    return (
+      <main
+        style={{
+          height: "100vh",
+          backgroundColor: "#160507",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "360px",
+            width: "100%",
+            borderRadius: "20px",
+            overflow: "hidden",
+            boxShadow: "0 0 35px rgba(255, 215, 0, 0.35)",
+            border: "2px solid #854d0e",
+          }}
+        >
+          <img
+            src={SPLASH_IMAGE}
+            alt="Shiv Sagar Gupta - Lion Logo"
+            style={{
+              width: "100%",
+              height: "auto",
+              display: "block",
+              objectFit: "contain",
+            }}
+          />
+        </div>
+      </main>
+    );
   }
 
   return (
