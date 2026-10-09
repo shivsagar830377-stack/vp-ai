@@ -285,6 +285,7 @@ export default function Home() {
             h2 { color: #0f172a; font-size: 16px; margin-top: 16px; margin-bottom: 6px; }
             p { margin: 6px 0; font-size: 14px; }
             li { margin-left: 20px; margin-bottom: 4px; font-size: 14px; }
+            pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; }
             .footer { margin-top: 30px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
           </style>
         </head>
@@ -634,10 +635,4 @@ export default function Home() {
               fontSize: "14px",
               fontStyle: "italic",
               display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <img
-              src={BOT_AVATAR}
-              alt="Thinking"
+              alignItems: "cente
