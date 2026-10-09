@@ -348,6 +348,8 @@ export default function Home() {
   }
 
     // Splash Screen Render (2.5 Seconds)
+  
+    // Splash Screen Render (2.5 Seconds)
   if (showSplash) {
     return (
       <main
@@ -358,8 +360,7 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px",
-          textAlign: "center",
+          padding: "20px",
           fontFamily: "system-ui, -apple-system, sans-serif",
           boxSizing: "border-box",
         }}
@@ -376,29 +377,35 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: "16px",
+            textAlign: "center",
+            gap: "14px",
           }}
         >
-          {/* Royal Sun Icon */}
-          <div style={{ fontSize: "52px", filter: "drop-shadow(0 0 12px rgba(255, 215, 0, 0.7))" }}>
+          {/* Golden Sun Symbol */}
+          <div style={{ fontSize: "56px", filter: "drop-shadow(0 0 16px rgba(255, 215, 0, 0.8))" }}>
             ☀️
           </div>
 
-          {/* Royal Lion Graphic */}
-          <div style={{ fontSize: "74px", filter: "drop-shadow(0 0 15px rgba(217, 119, 6, 0.5))", margin: "-10px 0" }}>
+          {/* Golden Star Accent */}
+          <div style={{ fontSize: "18px", color: "#facc15", marginTop: "-6px" }}>
+            ✦
+          </div>
+
+          {/* Royal Lion Symbol */}
+          <div style={{ fontSize: "78px", filter: "drop-shadow(0 0 18px rgba(217, 119, 6, 0.6))", margin: "-6px 0" }}>
             🦁
           </div>
 
-          <div>
+          <div style={{ marginTop: "8px" }}>
             <h1
               style={{
                 color: "#f59e0b",
-                fontSize: "22px",
+                fontSize: "21px",
                 fontWeight: "800",
                 letterSpacing: "3px",
-                margin: "10px 0 6px 0",
+                margin: "0 0 6px 0",
                 textTransform: "uppercase",
-                fontFamily: "serif",
+                fontFamily: "Georgia, serif",
               }}
             >
               SHIV SAGAR GUPTA
@@ -406,10 +413,10 @@ export default function Home() {
             <p
               style={{
                 color: "#fef08a",
-                opacity: 0.85,
+                opacity: 0.9,
                 fontSize: "12px",
                 fontWeight: "600",
-                letterSpacing: "2px",
+                letterSpacing: "2.5px",
                 margin: 0,
                 textTransform: "uppercase",
               }}
@@ -420,79 +427,19 @@ export default function Home() {
 
           <div
             style={{
-              width: "60px",
+              width: "70px",
               height: "2px",
               backgroundColor: "#d97706",
               borderRadius: "2px",
-              marginTop: "8px",
+              marginTop: "4px",
             }}
           />
         </div>
       </main>
     );
-}
+  
 
       >
-        <div
-          style={{
-            maxWidth: "360px",
-            width: "100%",
-            borderRadius: "20px",
-            overflow: "hidden",
-            boxShadow: "0 0 35px rgba(255, 215, 0, 0.35)",
-            border: "2px solid #854d0e",
-          }}
-        >
-          <img
-            src={SPLASH_IMAGE}
-            alt="Shiv Sagar Gupta - Lion Logo"
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              objectFit: "contain",
-            }}
-          />
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#f8fafc",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
-      <header
-        style={{
-          background: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-          padding: "10px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <img
-            src={BOT_AVATAR}
-            alt="VP AI Avatar"
-            style={{
-              width: "38px",
-              height: "38px",
-              borderRadius: "50%",
-              background: "#eff6ff",
-              border: "2px solid #2563eb",
-              objectFit: "cover",
-            }}
           />
           <div>
             <h1 style={{ fontSize: "15px", fontWeight: "700", margin: 0, color: "#0f172a" }}>
