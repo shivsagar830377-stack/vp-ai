@@ -106,7 +106,6 @@ function renderTextLines(text) {
 }
 
 export default function Home() {
-  const [showSplash, setShowSplash] = useState(true);
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isNotesMode, setIsNotesMode] = useState(false);
@@ -125,13 +124,6 @@ export default function Home() {
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const audioRef = useRef(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -285,7 +277,6 @@ export default function Home() {
             h2 { color: #0f172a; font-size: 16px; margin-top: 16px; margin-bottom: 6px; }
             p { margin: 6px 0; font-size: 14px; }
             li { margin-left: 20px; margin-bottom: 4px; font-size: 14px; }
-            pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; }
             .footer { margin-top: 30px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; }
           </style>
         </head>
@@ -344,92 +335,6 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (showSplash) {
-    return (
-      <main
-        style={{
-          height: "100vh",
-          backgroundColor: "#160507",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "20px",
-          fontFamily: "system-ui, -apple-system, sans-serif",
-          boxSizing: "border-box",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "340px",
-            width: "100%",
-            borderRadius: "24px",
-            padding: "36px 20px",
-            border: "2px solid #854d0e",
-            backgroundColor: "#200609",
-            boxShadow: "0 0 35px rgba(255, 215, 0, 0.35)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-            gap: "14px",
-          }}
-        >
-          <div style={{ fontSize: "56px", filter: "drop-shadow(0 0 16px rgba(255, 215, 0, 0.8))" }}>
-            ☀️
-          </div>
-
-          <div style={{ fontSize: "18px", color: "#facc15", marginTop: "-6px" }}>
-            ✦
-          </div>
-
-          <div style={{ fontSize: "78px", filter: "drop-shadow(0 0 18px rgba(217, 119, 6, 0.6))", margin: "-6px 0" }}>
-            🦁
-          </div>
-
-          <div style={{ marginTop: "8px" }}>
-            <h1
-              style={{
-                color: "#f59e0b",
-                fontSize: "21px",
-                fontWeight: "800",
-                letterSpacing: "3px",
-                margin: "0 0 6px 0",
-                textTransform: "uppercase",
-                fontFamily: "Georgia, serif",
-              }}
-            >
-              SHIV SAGAR GUPTA
-            </h1>
-            <p
-              style={{
-                color: "#fef08a",
-                opacity: 0.9,
-                fontSize: "12px",
-                fontWeight: "600",
-                letterSpacing: "2.5px",
-                margin: 0,
-                textTransform: "uppercase",
-              }}
-            >
-              AI PRODUCT BUILDER
-            </p>
-          </div>
-
-          <div
-            style={{
-              width: "70px",
-              height: "2px",
-              backgroundColor: "#d97706",
-              borderRadius: "2px",
-              marginTop: "4px",
-            }}
-          />
-        </div>
-      </main>
-    );
   }
 
   return (
@@ -635,4 +540,104 @@ export default function Home() {
               fontSize: "14px",
               fontStyle: "italic",
               display: "flex",
-              alignItems: "cente
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <img
+              src={BOT_AVATAR}
+              alt="Thinking"
+              style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }}
+            />
+            {isNotesMode ? "VP AI सचित्र नोट्स तैयार कर रहा है... 📝" : "VP AI चित्र बनाकर समझा रहा है... 🎨"}
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {selectedImage && (
+        <div
+          style={{
+            maxWidth: "760px",
+            width: "100%",
+            margin: "0 auto",
+            padding: "6px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            background: "#f1f5f9",
+            borderTop: "1px solid #e2e8f0",
+          }}
+        >
+          <img
+            src={selectedImage}
+            alt="Preview"
+            style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }}
+          />
+          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>
+            फोटो सेलेक्ट हो गई है
+          </span>
+          <button
+            onClick={() => setSelectedImage(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#ef4444",
+              fontSize: "16px",
+              cursor: "pointer",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      <div
+        style={{
+          position: "sticky",
+          bottom: 0,
+          background: "#ffffff",
+          borderTop: "1px solid #e2e8f0",
+          padding: "10px 14px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "760px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="फोटो जोड़ें"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: "1.5px solid #cbd5e1",
+              background: "#f8fafc",
+              fontSize: "18px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            📎
+          </button>
+
+          <button
+            onClick={toggleListening}
+            title="बोलकर ल
