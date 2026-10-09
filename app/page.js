@@ -347,7 +347,7 @@ export default function Home() {
     }
   }
 
-  // Splash Screen Render
+    // Splash Screen Render (2.5 Seconds)
   if (showSplash) {
     return (
       <main
@@ -355,10 +355,83 @@ export default function Home() {
           height: "100vh",
           backgroundColor: "#160507",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "20px",
+          padding: "24px",
+          textAlign: "center",
+          fontFamily: "system-ui, -apple-system, sans-serif",
+          boxSizing: "border-box",
         }}
+      >
+        <div
+          style={{
+            maxWidth: "340px",
+            width: "100%",
+            borderRadius: "24px",
+            padding: "36px 20px",
+            border: "2px solid #854d0e",
+            backgroundColor: "#200609",
+            boxShadow: "0 0 35px rgba(255, 215, 0, 0.35)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          {/* Royal Sun Icon */}
+          <div style={{ fontSize: "52px", filter: "drop-shadow(0 0 12px rgba(255, 215, 0, 0.7))" }}>
+            ☀️
+          </div>
+
+          {/* Royal Lion Graphic */}
+          <div style={{ fontSize: "74px", filter: "drop-shadow(0 0 15px rgba(217, 119, 6, 0.5))", margin: "-10px 0" }}>
+            🦁
+          </div>
+
+          <div>
+            <h1
+              style={{
+                color: "#f59e0b",
+                fontSize: "22px",
+                fontWeight: "800",
+                letterSpacing: "3px",
+                margin: "10px 0 6px 0",
+                textTransform: "uppercase",
+                fontFamily: "serif",
+              }}
+            >
+              SHIV SAGAR GUPTA
+            </h1>
+            <p
+              style={{
+                color: "#fef08a",
+                opacity: 0.85,
+                fontSize: "12px",
+                fontWeight: "600",
+                letterSpacing: "2px",
+                margin: 0,
+                textTransform: "uppercase",
+              }}
+            >
+              AI PRODUCT BUILDER
+            </p>
+          </div>
+
+          <div
+            style={{
+              width: "60px",
+              height: "2px",
+              backgroundColor: "#d97706",
+              borderRadius: "2px",
+              marginTop: "8px",
+            }}
+          />
+        </div>
+      </main>
+    );
+}
+
       >
         <div
           style={{
