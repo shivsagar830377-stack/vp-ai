@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 
 const BOT_AVATAR = "https://i.postimg.cc/C5pbh5zN/file-00000000583082118b16369073f60da3.png";
-const SPLASH_IMAGE = "https://i.postimg.cc/SNw05d0B/28988.jpg";
 
 function formatBold(str) {
   if (!str) return "";
@@ -127,7 +126,6 @@ export default function Home() {
   const recognitionRef = useRef(null);
   const audioRef = useRef(null);
 
-  // Splash Screen Timer (2.5 seconds)
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
@@ -347,9 +345,6 @@ export default function Home() {
     }
   }
 
-    // Splash Screen Render (2.5 Seconds)
-  
-    // Splash Screen Render (2.5 Seconds)
   if (showSplash) {
     return (
       <main
@@ -381,17 +376,14 @@ export default function Home() {
             gap: "14px",
           }}
         >
-          {/* Golden Sun Symbol */}
           <div style={{ fontSize: "56px", filter: "drop-shadow(0 0 16px rgba(255, 215, 0, 0.8))" }}>
             ☀️
           </div>
 
-          {/* Golden Star Accent */}
           <div style={{ fontSize: "18px", color: "#facc15", marginTop: "-6px" }}>
             ✦
           </div>
 
-          {/* Royal Lion Symbol */}
           <div style={{ fontSize: "78px", filter: "drop-shadow(0 0 18px rgba(217, 119, 6, 0.6))", margin: "-6px 0" }}>
             🦁
           </div>
@@ -437,9 +429,43 @@ export default function Home() {
         </div>
       </main>
     );
-  
+  }
 
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
+    >
+      <header
+        style={{
+          background: "#ffffff",
+          borderBottom: "1px solid #e2e8f0",
+          padding: "10px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
       >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <img
+            src={BOT_AVATAR}
+            alt="VP AI Avatar"
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "50%",
+              background: "#eff6ff",
+              border: "2px solid #2563eb",
+              objectFit: "cover",
+            }}
           />
           <div>
             <h1 style={{ fontSize: "15px", fontWeight: "700", margin: 0, color: "#0f172a" }}>
@@ -615,153 +641,3 @@ export default function Home() {
             <img
               src={BOT_AVATAR}
               alt="Thinking"
-              style={{ width: "20px", height: "20px", borderRadius: "50%", objectFit: "cover" }}
-            />
-            {isNotesMode ? "VP AI सचित्र नोट्स तैयार कर रहा है... 📝" : "VP AI चित्र बनाकर समझा रहा है... 🎨"}
-          </div>
-        )}
-        <div ref={chatEndRef} />
-      </div>
-
-      {selectedImage && (
-        <div
-          style={{
-            maxWidth: "760px",
-            width: "100%",
-            margin: "0 auto",
-            padding: "6px 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            background: "#f1f5f9",
-            borderTop: "1px solid #e2e8f0",
-          }}
-        >
-          <img
-            src={selectedImage}
-            alt="Preview"
-            style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }}
-          />
-          <span style={{ fontSize: "12px", color: "#475569", flex: 1 }}>
-            फोटो सेलेक्ट हो गई है
-          </span>
-          <button
-            onClick={() => setSelectedImage(null)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#ef4444",
-              fontSize: "16px",
-              cursor: "pointer",
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      <div
-        style={{
-          position: "sticky",
-          bottom: 0,
-          background: "#ffffff",
-          borderTop: "1px solid #e2e8f0",
-          padding: "10px 14px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "760px",
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageSelect}
-            accept="image/*"
-            style={{ display: "none" }}
-          />
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            title="फोटो जोड़ें"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              border: "1.5px solid #cbd5e1",
-              background: "#f8fafc",
-              fontSize: "18px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            📎
-          </button>
-
-          <button
-            onClick={toggleListening}
-            title="बोलकर लिखें"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              border: isListening ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
-              background: isListening ? "#fee2e2" : "#f8fafc",
-              fontSize: "18px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            {isListening ? "🔴" : "🎙️"}
-          </button>
-
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="हार्ट, आँख या किसी भी चीज़ का सचित्र डायग्राम बनवाएं..."
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              fontSize: "15px",
-              borderRadius: "24px",
-              border: "1.5px solid #cbd5e1",
-              outline: "none",
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          />
-
-          <button
-            onClick={handleSend}
-            disabled={loading}
-            style={{
-              padding: "0 18px",
-              height: "40px",
-              fontSize: "14px",
-              fontWeight: "600",
-              borderRadius: "24px",
-              border: "none",
-              background: loading ? "#93c5fd" : "#2563eb",
-              color: "#ffffff",
-              cursor: loading ? "not-allowed" : "pointer",
-              flexShrink: 0,
-            }}
-          >
-            {isNotesMode ? "नोट्स बनाएँ" : "भेजें"}
-          </button>
-        </div>
-      </div>
-    </main>
-  );
-}
