@@ -5,13 +5,13 @@ export async function POST(req) {
     const { message, image, isNotesMode, isImageGenMode } = await req.json();
     const promptText = (message || "").trim();
 
-    // 1. इमेज जनरेशन मोड (जब फोटो बनाने का प्रॉम्प्ट हो)
+    // 1. फोटो जनरेशन
     if (isImageGenMode || /फोटो|चित्र|image|photo|बनाओ|generate/i.test(promptText)) {
       const cleanPrompt = promptText
         .replace(/फोटो|इमेज|चित्र|picture|image|बनाओ|बनाइए|तस्वीर|generate/gi, "")
         .trim() || promptText;
 
-      const encoded = encodeURIComponent(cleanPrompt + ", detailed high quality 8k");
+      const encoded = encodeURIComponent(cleanPrompt + ", detailed 8k high quality");
       const seed = Math.floor(Math.random() * 1000000);
       const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?seed=${seed}&width=1024&height=1024&nologo=true`;
 
@@ -20,57 +20,47 @@ export async function POST(req) {
       });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
     let rolePrompt = "आप VP AI Assistant हैं। हिंदी और भोजपुरी मिक्स में सरल, सटीक और स्पष्ट उत्तर दें।";
     if (isNotesMode) {
       rolePrompt = "आप VP AI Assistant हैं। साफ़-सुथरे बुलेट पॉइंट्स, हेडिंग्स और विजुअल स्टडी नोट्स के रूप में उत्तर तैयार करें।";
     }
 
-    // 2. Gemini के उपलब्ध मॉडल्स को एक-एक करके ट्राय करना
-    const modelsToTry = [
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-pro"
-    ];
+    // 2. Pollinations AI बैकएंड (100% फ्री, बिना किसी API Key या मॉडल एरर के तुरंत उत्तर)
+    try {
+      const aiUrl = `https://text.pollinations.ai/${encodeURIComponent(rolePrompt + "\nसवाल: " + promptText)}`;
+      const aiRes = await fetch(aiUrl);
+      const aiText = await aiRes.text();
 
-    if (apiKey) {
-      for (const model of modelsToTry) {
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    role: "user",
-                    parts: [{ text: `${rolePrompt}\n\nसवाल: ${promptText}` }]
-                  }
-                ]
-              })
-            }
-          );
-
-          const data = await res.json();
-          const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (replyText) {
-            return NextResponse.json({ reply: replyText });
-          }
-        } catch (e) {
-          // अगला मॉडल ट्राय करेगा
-        }
+      if (aiText && aiText.trim() && !aiText.includes("error")) {
+        return NextResponse.json({ reply: aiText });
       }
+    } catch (e) {
+      // फॉलबैक पर आगे बढ़ें
     }
 
-    // 3. फ़ॉलबैक (अगर Gemini Key में दिक्कत हो तो बैकअप AI जवाब देगा)
-    const backupRes = await fetch(
-      `https://text.pollinations.ai/${encodeURIComponent(rolePrompt + "\nसवाल: " + promptText)}`
-    );
-    const backupText = await backupRes.text();
-
-    if (backupText && backupText.trim()) {
-      return NextResponse.json({ reply: backupText });
+    // 3. Gemini फॉलबैक (gemini-pro)
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: `${rolePrompt}\n\nसवाल: ${promptText}` }]
+              }
+            ]
+          })
+        }
+      );
+      const data = await res.json();
+      const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (replyText) {
+        return NextResponse.json({ reply: replyText });
+      }
     }
 
     return NextResponse.json({ reply: "माफ़ करें, उत्तर लोड नहीं हो सका। कृपया पुनः प्रयास करें।" });
