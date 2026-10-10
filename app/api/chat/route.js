@@ -31,8 +31,9 @@ export async function POST(req) {
       rolePrompt = "आप VP AI Assistant हैं। साफ़-सुथरे बुलेट पॉइंट्स, हेडिंग्स और विजुअल स्टडी नोट्स के रूप में उत्तर तैयार करें।";
     }
 
+    // v1 एंडपॉइंट और gemini-1.5-flash का सही URL
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,14 +50,13 @@ export async function POST(req) {
 
     const data = await res.json();
 
-    // अगर API ने एरर दिया तो एरर मैसेज दिखाएँ
     if (data.error) {
-      return NextResponse.json({ reply: `API एरर: ${data.error.message || "समस्या हुई"}` });
+      return NextResponse.json({ reply: `API एरर: ${data.error.message || "मॉडल लोड नहीं हुआ"}` });
     }
 
     const replyText =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "माफ़ करें, इस सवाल का जवाब अभी नहीं मिल पाया। कृपया दोबारा पूछें।";
+      "माफ़ करें, उत्तर प्राप्त नहीं हुआ। कृपया दोबारा पूछें।";
 
     return NextResponse.json({ reply: replyText });
   } catch (err) {
