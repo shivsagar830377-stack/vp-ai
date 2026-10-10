@@ -31,9 +31,9 @@ export async function POST(req) {
       rolePrompt = "आप VP AI Assistant हैं। साफ़-सुथरे बुलेट पॉइंट्स, हेडिंग्स और विजुअल स्टडी नोट्स के रूप में उत्तर तैयार करें।";
     }
 
-    // v1 एंडपॉइंट और gemini-1.5-flash का सही URL
+    // gemini-2.0-flash / gemini-1.5-flash-latest का ऑटो-फॉलथ्रू एंडपॉइंट
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
