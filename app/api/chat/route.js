@@ -5,7 +5,7 @@ export async function POST(req) {
     const { message, image, isNotesMode, isImageGenMode } = await req.json();
     const promptText = (message || "").trim();
 
-    // 1. इमेज जनरेशन मोड
+    // 1. इमेज जनरेशन मोड (जब फोटो बनाने का प्रॉम्प्ट हो)
     if (isImageGenMode || /फोटो|चित्र|image|photo|बनाओ|generate/i.test(promptText)) {
       const cleanPrompt = promptText
         .replace(/फोटो|इमेज|चित्र|picture|image|बनाओ|बनाइए|तस्वीर|generate/gi, "")
@@ -20,46 +20,61 @@ export async function POST(req) {
       });
     }
 
-    // 2. Gemini Chat
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "Gemini API Key सेट नहीं है।" }, { status: 500 });
-    }
-
     let rolePrompt = "आप VP AI Assistant हैं। हिंदी और भोजपुरी मिक्स में सरल, सटीक और स्पष्ट उत्तर दें।";
     if (isNotesMode) {
       rolePrompt = "आप VP AI Assistant हैं। साफ़-सुथरे बुलेट पॉइंट्स, हेडिंग्स और विजुअल स्टडी नोट्स के रूप में उत्तर तैयार करें।";
     }
 
-    // gemini-2.0-flash / gemini-1.5-flash-latest का ऑटो-फॉलथ्रू एंडपॉइंट
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
+    // 2. Gemini के उपलब्ध मॉडल्स को एक-एक करके ट्राय करना
+    const modelsToTry = [
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-pro"
+    ];
+
+    if (apiKey) {
+      for (const model of modelsToTry) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
             {
-              role: "user",
-              parts: [{ text: `${rolePrompt}\n\nयूज़र का सवाल: ${promptText}` }]
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: "user",
+                    parts: [{ text: `${rolePrompt}\n\nसवाल: ${promptText}` }]
+                  }
+                ]
+              })
             }
-          ]
-        })
+          );
+
+          const data = await res.json();
+          const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (replyText) {
+            return NextResponse.json({ reply: replyText });
+          }
+        } catch (e) {
+          // अगला मॉडल ट्राय करेगा
+        }
       }
-    );
-
-    const data = await res.json();
-
-    if (data.error) {
-      return NextResponse.json({ reply: `API एरर: ${data.error.message || "मॉडल लोड नहीं हुआ"}` });
     }
 
-    const replyText =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "माफ़ करें, उत्तर प्राप्त नहीं हुआ। कृपया दोबारा पूछें।";
+    // 3. फ़ॉलबैक (अगर Gemini Key में दिक्कत हो तो बैकअप AI जवाब देगा)
+    const backupRes = await fetch(
+      `https://text.pollinations.ai/${encodeURIComponent(rolePrompt + "\nसवाल: " + promptText)}`
+    );
+    const backupText = await backupRes.text();
 
-    return NextResponse.json({ reply: replyText });
+    if (backupText && backupText.trim()) {
+      return NextResponse.json({ reply: backupText });
+    }
+
+    return NextResponse.json({ reply: "माफ़ करें, उत्तर लोड नहीं हो सका। कृपया पुनः प्रयास करें।" });
   } catch (err) {
-    return NextResponse.json({ reply: "सर्वर से कनेक्ट नहीं हो सका: " + err.message }, { status: 500 });
+    return NextResponse.json({ reply: "कनेक्शन में समस्या हुई: " + err.message }, { status: 500 });
   }
 }
