@@ -10,7 +10,8 @@ export async function POST(req) {
     if (isImageGenMode || /फोटो|चित्र|image|photo|बनाओ|generate/i.test(promptText)) {
       
       // चेहरे और स्टाइल की मुख्य विशेषताएँ (कॉम्पैक्ट और सटीक)
-      const coreStyle = "18yo indian young male, short curly black hair, small tilak on forehead, denim shirt, golden hour sunlight, cinematic candid street portrait, realistic photography, 35mm lens, high detail";
+      const coreStyle = "authentic Indian young man, South Asian facial features, natural wheatish brown Indian skin tone, short wavy black hair, wearing light blue denim shirt, golden hour sunlight, sharp realistic Indian face photography, 35mm lens, candid city street, 8k";
+      
       
       // प्रॉम्प्ट को साफ और छोटा करना ताकि URL कभी क्रैश न हो
       let userQuery = promptText
