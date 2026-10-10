@@ -114,8 +114,9 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content:
-        "प्रणाम! हम बानी रउआ सब के **VP AI Assistant**। 🚀\nकौनों भी टॉपिक पर लिख के या बोल के (🎙️) पूछीं। अगर फोटो बनवाना होखे त **🎨 फोटो बनाएँ** बटन चालू करके प्रॉम्प्ट लिखीं!",
+      content: 
+        "नमस्ते! मैं आपका **VP AI Assistant** हूँ। 🚀\nकिसी भी विषय पर लिखकर या बोलकर (🎙️) सवाल पूछें। यदि आपको तस्वीर बनवानी है, तो **🎨 फोटो बनाएँ** बटन चालू करके प्रॉम्प्ट लिखें!",
+      
     },
   ]);
   const [loading, setLoading] = useState(false);
